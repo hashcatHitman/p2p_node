@@ -46,3 +46,50 @@ impl Display for PeerStatus {
         write!(f, "{string}")
     }
 }
+
+/// Tracked state for a single monitored peer.
+#[derive(Debug, Clone)]
+pub struct PeerState {
+    node_id: String,
+    status: PeerStatus,
+    consecutive_misses: u8,
+    last_pong_round: u8,
+    total_pings_sent: u8,
+    total_pongs_received: u8,
+}
+
+impl PeerState {
+    pub const fn new(node_id: String) -> Self {
+        Self {
+            node_id,
+            status: PeerStatus::Alive,
+            consecutive_misses: 0,
+            last_pong_round: 0,
+            total_pings_sent: 0,
+            total_pongs_received: 0,
+        }
+    }
+
+    pub fn response_rate(&self) -> f64 {
+        match self.total_pings_sent {
+            0 => 1.0,
+            _ => {
+                f64::from(self.total_pongs_received)
+                    / f64::from(self.total_pings_sent)
+            }
+        }
+    }
+}
+
+impl Display for PeerState {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "PeerState({}, {}, misses={}, rate={:.0}%)",
+            self.node_id,
+            self.status,
+            self.consecutive_misses,
+            self.response_rate()
+        )
+    }
+}
