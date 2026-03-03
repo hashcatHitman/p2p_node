@@ -16,3 +16,4 @@
 //!   5. reputation  - Trust scoring and weighted voting
 
 pub mod gossip;
+pub mod heartbeat;
