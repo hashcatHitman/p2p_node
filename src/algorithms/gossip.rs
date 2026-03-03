@@ -139,11 +139,50 @@ impl GossipNode {
     /// Returns:
     ///    Number of new peers discovered (not previously in our table).
     pub fn receive_peer_list(
-        &self,
+        &mut self,
         incoming: Vec<serde_json::Value>,
         sender_id: String,
     ) -> u8 {
-        todo!()
+        let mut new_count: u8 = 0;
+
+        for entry in incoming {
+            let node_id = entry
+                .get("node_id")
+                .and_then(|v| v.as_str().map(ToOwned::to_owned));
+
+            match node_id {
+                Some(node_id) => {
+                    if node_id == self.node_id {
+                        continue;
+                    }
+
+                    if self.peers.contains_key(&node_id) {
+                        self.peers.get_mut(&node_id).unwrap().time_to_live = 5;
+                    } else {
+                        let queue_url = entry
+                            .get("queue_url")
+                            .and_then(|v| v.as_str().map(ToOwned::to_owned));
+
+                        match queue_url {
+                            Some(queue_url) => {
+                                drop(self.peers.insert(
+                                    node_id.clone(),
+                                    PeerEntry::new(node_id, queue_url),
+                                ));
+                                new_count += 1;
+                            }
+                            None => eprintln!(
+                                "[WARNING]: Found no queue_url for {node_id} when receiving peer list from {sender_id}"
+                            ),
+                        }
+                    }
+                }
+                None => eprintln!(
+                    "[WARNING]: Found no node_id when receiving peer list from {sender_id}"
+                ),
+            }
+        }
+        new_count
     }
 
     /// Decrement TTL on all entries; remove expired ones.
