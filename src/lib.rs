@@ -4,6 +4,8 @@
 
 //! reading makes you smart.
 
+pub mod algorithms;
+
 /// This isn't a real project.
 ///
 /// ```rust
