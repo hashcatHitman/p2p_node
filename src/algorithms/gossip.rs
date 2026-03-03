@@ -149,3 +149,108 @@ impl Display for GossipNode {
         )
     }
 }
+
+#[expect(clippy::missing_panics_doc, reason = "tests tend to do that")]
+#[cfg(test)]
+mod test {
+    use crate::algorithms::gossip::GossipNode;
+
+    #[test]
+    fn add_peer_increases_count() {
+        let node = GossipNode::new("node-a".to_owned(), String::new());
+        node.add_peer("node-b".to_owned(), "https://sqs.fake/b".to_owned());
+        assert_eq!(node.known_peer_count(), 1);
+    }
+
+    #[test]
+    fn add_same_peer_twice_no_duplicate() {
+        let node = GossipNode::new("node-a".to_owned(), String::new());
+        node.add_peer("node-b".to_owned(), "https://sqs.fake/b".to_owned());
+        node.add_peer("node-b".to_owned(), "https://sqs.fake/b".to_owned());
+        assert_eq!(node.known_peer_count(), 1);
+    }
+
+    #[test]
+    fn pick_target_returns_known_peer() {
+        let node = GossipNode::new("node-a".to_owned(), String::new());
+        node.add_peer("node-b".to_owned(), "https://sqs.fake/b".to_owned());
+        node.add_peer("node-c".to_owned(), "https://sqs.fake/c".to_owned());
+        let target = node.pick_gossip_target();
+        match target {
+            Some(chosen) => assert!(
+                ["node-b".to_owned(), "node-c".to_owned()].contains(&chosen)
+            ),
+            None => panic!("failed to pick a gossip target"),
+        }
+        assert_eq!(node.known_peer_count(), 1);
+    }
+
+    #[test]
+    fn pick_target_none_when_empty() {
+        let node = GossipNode::new("node-a".to_owned(), String::new());
+        node.add_peer("node-b".to_owned(), "https://sqs.fake/b".to_owned());
+        node.add_peer("node-c".to_owned(), "https://sqs.fake/c".to_owned());
+        let target = node.pick_gossip_target();
+        assert_eq!(target, None);
+    }
+
+    #[test]
+    fn peer_list_message_format() {
+        let node = GossipNode::new(
+            "node-a".to_owned(),
+            "https://sqs.fake/a".to_owned(),
+        );
+        node.add_peer("node-b".to_owned(), "https://sqs.fake/b".to_owned());
+        let msg = node.get_peer_list_message();
+        assert!(!msg.is_empty());
+        for entry in msg {
+            assert!(entry.contains_key("node_id"));
+            assert!(entry.contains_key("queue_url"));
+        }
+    }
+
+    #[test]
+    fn receive_discovers_new_peer() {
+        let node = GossipNode::new("node-a".to_owned(), String::new());
+        node.add_peer("node-b".to_owned(), "https://sqs.fake/b".to_owned());
+        let incoming = todo!(); // [{"node_id": "node-c", "queue_url": "https://sqs.fake/c"}];
+        let new = node.receive_peer_list(incoming, "node-b".to_owned());
+        assert!(node.known_peer_count() >= 2);
+        assert_eq!(new, 1);
+    }
+
+    #[test]
+    fn receive_no_false_new_for_existing_peer() {
+        let node = GossipNode::new("node-a".to_owned(), String::new());
+        node.add_peer("node-b".to_owned(), "https://sqs.fake/b".to_owned());
+        let incoming = todo!(); // [{"node_id": "node-b", "queue_url": "https://sqs.fake/b"}];
+        let new = node.receive_peer_list(incoming, "node-b".to_owned());
+        assert_eq!(new, 0);
+    }
+
+    #[test]
+    fn age_entries_expires_peers() {
+        let node = GossipNode::new("node-a".to_owned(), String::new());
+        node.add_peer("node-b".to_owned(), "https://sqs.fake/b".to_owned());
+
+        for _ in 0..10 {
+            node.age_entries();
+        }
+
+        assert_eq!(node.known_peer_count(), 0);
+    }
+
+    #[test]
+    fn does_not_target_self() {
+        let node = GossipNode::new("node-a".to_owned(), String::new());
+        node.add_peer("node-b".to_owned(), "https://sqs.fake/b".to_owned());
+
+        for _ in 0..20 {
+            let target = node.pick_gossip_target();
+
+            if let Some(chosen) = target {
+                assert_ne!(chosen, "node-a".to_owned());
+            }
+        }
+    }
+}
