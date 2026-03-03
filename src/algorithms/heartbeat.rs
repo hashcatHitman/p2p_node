@@ -28,6 +28,7 @@
 
 use core::fmt;
 use core::fmt::Display;
+use std::collections::HashMap;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum PeerStatus {
@@ -90,6 +91,110 @@ impl Display for PeerState {
             self.status,
             self.consecutive_misses,
             self.response_rate()
+        )
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct HeartbeatNode {
+    node_id: String,
+    miss_threshold: u8,
+    grace_period: u8,
+    peers: HashMap<String, PeerState>,
+    log: Vec<String>,
+}
+
+impl HeartbeatNode {
+    pub fn new(node_id: String, miss_threshold: u8, grace_period: u8) -> Self {
+        Self {
+            node_id,
+            miss_threshold,
+            grace_period,
+            peers: HashMap::new(),
+            log: Vec::new(),
+        }
+    }
+
+    /// Register a new peer to monitor (start in ALIVE state).
+    pub fn add_peer(&self, node_id: String) {
+        todo!()
+    }
+
+    /// Record that we are sending a PING to every ALIVE and SUSPECT peer.
+    ///
+    /// Increments total_pings_sent for each peer pinged.
+    /// Dead peers are skipped.
+    ///
+    /// Returns:
+    ///     List of peer_ids that should receive a PING this round.
+    pub fn send_pings(&self, current_round: u32) -> Vec<String> {
+        todo!()
+    }
+
+    /// Process a PONG response from a peer.
+    ///
+    /// Update the peer's state:
+    ///   - Reset consecutive_misses to 0
+    ///   - Set status back to ALIVE
+    ///   - Update last_pong_round and total_pongs_received
+    ///
+    /// Args:
+    ///     from_node:     node_id of the peer who replied
+    ///     current_round: current poll round number
+    pub fn receive_pong(&self, from_node: String, current_round: u32) {
+        todo!()
+    }
+
+    /// Record that a PING got no PONG from this peer this round.
+    ///
+    /// Update the peer's state machine:
+    ///   - Increment consecutive_misses
+    ///   - If misses >= miss_threshold -> DEAD
+    ///   - If misses >= grace_period   -> SUSPECT
+    ///   - Log any status transition
+    ///
+    /// Args:
+    ///     peer_id:       node_id of the non-responding peer
+    ///     current_round: current poll round number
+    pub fn record_miss(&self, peer_id: String, current_round: u32) {
+        todo!()
+    }
+
+    /// Return node_ids of all ALIVE peers.
+    pub fn get_alive_peers(&self) -> Vec<String> {
+        todo!()
+    }
+
+    /// Return node_ids of all SUSPECT peers.
+    pub fn get_suspect_peers(&self) -> Vec<String> {
+        todo!()
+    }
+
+    /// Return node_ids of all DEAD peers.
+    pub fn get_dead_peers(&self) -> Vec<String> {
+        todo!()
+    }
+
+    /// Remove DEAD peers from the tracking table.
+    pub fn prune_dead(&self) {
+        todo!()
+    }
+
+    pub fn flush_log(&mut self) -> Vec<String> {
+        let messages = self.log.clone();
+        self.log.clear();
+        messages
+    }
+}
+
+impl Display for HeartbeatNode {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "HeartbeatNode({}, alive={:?}, dead={:?})",
+            self.node_id,
+            self.get_alive_peers(),
+            self.get_dead_peers(),
         )
     }
 }
