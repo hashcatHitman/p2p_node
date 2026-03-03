@@ -208,7 +208,7 @@ mod test {
 
     #[test]
     fn new_peer_is_alive() {
-        let node = HeartbeatNode::new("node-a".to_owned(), 3, 2);
+        let mut node = HeartbeatNode::new("node-a".to_owned(), 3, 2);
         node.add_peer("node-b".to_owned());
         let living = node.get_alive_peers();
         assert!(living.contains(&"node-b".to_owned()));
@@ -216,7 +216,7 @@ mod test {
 
     #[test]
     fn send_pings_returns_alive_peers() {
-        let node = HeartbeatNode::new("node-a".to_owned(), 3, 2);
+        let mut node = HeartbeatNode::new("node-a".to_owned(), 3, 2);
         node.add_peer("node-b".to_owned());
         node.add_peer("node-c".to_owned());
         let pinged = node.send_pings(1);
@@ -226,7 +226,7 @@ mod test {
 
     #[test]
     fn pong_keeps_peer_alive() {
-        let node = HeartbeatNode::new("node-a".to_owned(), 3, 2);
+        let mut node = HeartbeatNode::new("node-a".to_owned(), 3, 2);
         node.add_peer("node-b".to_owned());
         drop(node.send_pings(1));
         node.receive_pong("node-b".to_owned(), 1);
@@ -237,7 +237,7 @@ mod test {
     #[test]
     fn grace_period_misses_produces_suspect() {
         const GRACE: u8 = 2;
-        let node = HeartbeatNode::new("node-a".to_owned(), 5, GRACE);
+        let mut node = HeartbeatNode::new("node-a".to_owned(), 5, GRACE);
         node.add_peer("node-b".to_owned());
 
         for round in 1..=GRACE {
@@ -255,7 +255,7 @@ mod test {
     #[test]
     fn threshold_misses_produces_dead() {
         const THRESHOLD: u8 = 3;
-        let node = HeartbeatNode::new("node-a".to_owned(), THRESHOLD, 2);
+        let mut node = HeartbeatNode::new("node-a".to_owned(), THRESHOLD, 2);
         node.add_peer("node-b".to_owned());
 
         for round in 1..=THRESHOLD {
@@ -269,7 +269,7 @@ mod test {
 
     #[test]
     fn pong_after_suspect_restores_alive() {
-        let node = HeartbeatNode::new("node-a".to_owned(), 5, 2);
+        let mut node = HeartbeatNode::new("node-a".to_owned(), 5, 2);
         node.add_peer("node-b".to_owned());
 
         for round in 1..=2 {
@@ -291,7 +291,7 @@ mod test {
 
     #[test]
     fn dead_peers_not_pinged() {
-        let node = HeartbeatNode::new("node-a".to_owned(), 3, 2);
+        let mut node = HeartbeatNode::new("node-a".to_owned(), 3, 2);
         node.add_peer("node-b".to_owned());
 
         for round in 1..4 {
@@ -308,7 +308,7 @@ mod test {
 
     #[test]
     fn lists_are_disjoint() {
-        let node = HeartbeatNode::new("node-a".to_owned(), 3, 2);
+        let mut node = HeartbeatNode::new("node-a".to_owned(), 3, 2);
         node.add_peer("node-b".to_owned());
         node.add_peer("node-c".to_owned());
         node.add_peer("node-d".to_owned());
