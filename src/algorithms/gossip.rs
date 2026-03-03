@@ -113,7 +113,7 @@ impl GossipNode {
     ///    Number of new peers discovered (not previously in our table).
     pub fn receive_peer_list(
         &self,
-        incoming: Vec<HashMap<String, String>>,
+        incoming: Vec<serde_json::Value>,
         sender_id: String,
     ) -> u8 {
         todo!()
@@ -153,6 +153,8 @@ impl Display for GossipNode {
 #[expect(clippy::missing_panics_doc, reason = "tests tend to do that")]
 #[cfg(test)]
 mod test {
+    use serde_json::json;
+
     use crate::algorithms::gossip::GossipNode;
 
     #[test]
@@ -213,7 +215,9 @@ mod test {
     fn receive_discovers_new_peer() {
         let node = GossipNode::new("node-a".to_owned(), String::new());
         node.add_peer("node-b".to_owned(), "https://sqs.fake/b".to_owned());
-        let incoming = todo!(); // [{"node_id": "node-c", "queue_url": "https://sqs.fake/c"}];
+        let incoming = vec![
+            json!({"node_id": "node-c", "queue_url": "https://sqs.fake/c"}),
+        ];
         let new = node.receive_peer_list(incoming, "node-b".to_owned());
         assert!(node.known_peer_count() >= 2);
         assert_eq!(new, 1);
@@ -223,7 +227,9 @@ mod test {
     fn receive_no_false_new_for_existing_peer() {
         let node = GossipNode::new("node-a".to_owned(), String::new());
         node.add_peer("node-b".to_owned(), "https://sqs.fake/b".to_owned());
-        let incoming = todo!(); // [{"node_id": "node-b", "queue_url": "https://sqs.fake/b"}];
+        let incoming = vec![
+            json!({"node_id": "node-b", "queue_url": "https://sqs.fake/b"}),
+        ];
         let new = node.receive_peer_list(incoming, "node-b".to_owned());
         assert_eq!(new, 0);
     }
