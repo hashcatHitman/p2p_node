@@ -271,9 +271,7 @@ mod test {
 
     #[test]
     fn pick_target_none_when_empty() {
-        let mut node = GossipNode::new("node-a".to_owned(), String::new());
-        node.add_peer("node-b".to_owned(), "https://sqs.fake/b".to_owned());
-        node.add_peer("node-c".to_owned(), "https://sqs.fake/c".to_owned());
+        let node = GossipNode::new("node-a".to_owned(), String::new());
         let target = node.pick_gossip_target();
         assert_eq!(target, None);
     }
