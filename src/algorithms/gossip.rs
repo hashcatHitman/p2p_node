@@ -157,8 +157,8 @@ impl GossipNode {
                         continue;
                     }
 
-                    if self.peers.contains_key(&node_id) {
-                        self.peers.get_mut(&node_id).unwrap().time_to_live = 5;
+                    if let Some(peer) = self.peers.get_mut(&node_id) {
+                        peer.time_to_live = 5
                     } else {
                         let queue_url = entry
                             .get("queue_url")
