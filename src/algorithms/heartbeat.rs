@@ -116,8 +116,8 @@ impl HeartbeatNode {
     }
 
     /// Register a new peer to monitor (start in ALIVE state).
-    pub fn add_peer(&self, node_id: String) {
-        todo!()
+    pub fn add_peer(&mut self, node_id: String) {
+        drop(self.peers.insert(node_id.clone(), PeerState::new(node_id)));
     }
 
     /// Record that we are sending a PING to every ALIVE and SUSPECT peer.
