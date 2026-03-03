@@ -29,6 +29,7 @@ use core::fmt;
 use core::fmt::Display;
 use std::collections::HashMap;
 
+use rand::seq::IteratorRandom as _;
 use serde_json::json;
 
 /// A single known peer in the gossip table.
@@ -208,7 +209,11 @@ impl GossipNode {
     /// Pick a random peer to send a PEER_LIST to.
     /// Returns None if no peers are known yet.
     pub fn pick_gossip_target(&self) -> Option<String> {
-        todo!()
+        if self.peers.is_empty() {
+            None
+        } else {
+            self.peers.keys().choose(&mut rand::rng()).cloned()
+        }
     }
 
     pub fn known_peer_count(&self) -> usize {
