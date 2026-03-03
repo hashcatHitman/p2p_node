@@ -22,7 +22,7 @@ env:
   CARGO_VET_VERSION: 0.10.2
   CARGO_AUDIT_VERSION: 0.22.1
   ZIZMOR_VERSION: 1.23.1
-  MSRV: 1.89.0
+  MSRV: 1.93.1
 
 defaults:
   run:

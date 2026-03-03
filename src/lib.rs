@@ -7,7 +7,7 @@
 /// This isn't a real project.
 ///
 /// ```rust
-/// println!("{}", rust_project_template::read_a_book())
+/// println!("{}", p2p_node::read_a_book())
 /// ```
 pub const fn read_a_book() -> &'static str {
     "you are so smart!!"

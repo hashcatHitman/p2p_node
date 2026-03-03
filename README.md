@@ -4,21 +4,13 @@ SPDX-FileCopyrightText: Copyright © 2025 hashcatHitman
 SPDX-License-Identifier: Apache-2.0 OR MIT
 -->
 
-# Rust Project Template
+# Peer-to-peer Node
 
 [![unsafe forbidden]][safety dance] [![dependency badge]][deps.rs] [![CI status]][CI workflow] [![CodeQL]][CodeQL workflow]
 
 ---
 
-This project serves as a base for my projects in Rust. It isn't really meant to
-be used by others, but you're welcome to use it if you find it helpful. If you
-decide to use it, it IS licensed under the dual Apache 2.0/MIT licensing.
-
-The `CONTRIBUTING.md` is also not exactly meant for this project, but if you do
-want to contribute, that's more than welcome - just bear in mind I'm unlikely to
-accept contributions that don't make the project more useful for me.
-
-The rest of the information in this README is boilerplate.
+A peer-to-peer node for the system we created in my Distributed Computing class.
 
 ## Getting Started
 
@@ -32,8 +24,8 @@ You should also have some version of git installed. You can refer to the
 Clone the repository and navigate inside it:
 
 ```bash
-git clone https://github.com/hashcatHitman/rust_project_template.git
-cd rust_project_template
+git clone https://github.com/hashcatHitman/p2p_node.git
+cd p2p_node
 ```
 
 If you'd like to read the documentation, the recommended way to do so is with:
@@ -51,14 +43,14 @@ cargo build --profile release --locked
 ```
 
 Cargo will download the dependencies and compile the project. It will probably
-be located at `./target/release/rust_project_template` or
-`./target/release/rust_project_template.exe`, depending on your system.
+be located at `./target/release/p2p_node` or
+`./target/release/p2p_node.exe`, depending on your system.
 
 ## MSRV Policy
 
 <!-- Adapted from Arti's MSRV policy -->
 
-Our current Minimum Supported Rust Version (MSRV) is 1.89.
+Our current Minimum Supported Rust Version (MSRV) is 1.93.1.
 
 We may increase the patch level of the MSRV on any release.
 
@@ -72,14 +64,14 @@ it will exist.)
 [unsafe forbidden]: https://img.shields.io/badge/unsafe-forbidden-success.svg
 [safety dance]: https://github.com/rust-secure-code/safety-dance/
 
-[dependency badge]: https://deps.rs/repo/github/hashcatHitman/rust_project_template/status.svg
-[deps.rs]: https://deps.rs/repo/github/hashcatHitman/rust_project_template
+[dependency badge]: https://deps.rs/repo/github/hashcatHitman/p2p_node/status.svg
+[deps.rs]: https://deps.rs/repo/github/hashcatHitman/p2p_node
 
-[CI status]: https://github.com/hashcatHitman/rust_project_template/actions/workflows/ci.yml/badge.svg
-[CI workflow]: https://github.com/hashcatHitman/rust_project_template/actions/workflows/ci.yml
+[CI status]: https://github.com/hashcatHitman/p2p_node/actions/workflows/ci.yml/badge.svg
+[CI workflow]: https://github.com/hashcatHitman/p2p_node/actions/workflows/ci.yml
 
-[CodeQL]: https://github.com/hashcatHitman/rust_project_template/actions/workflows/github-code-scanning/codeql/badge.svg
-[CodeQL workflow]: https://github.com/hashcatHitman/rust_project_template/actions/workflows/github-code-scanning/codeql
+[CodeQL]: https://github.com/hashcatHitman/p2p_node/actions/workflows/github-code-scanning/codeql/badge.svg
+[CodeQL workflow]: https://github.com/hashcatHitman/p2p_node/actions/workflows/github-code-scanning/codeql
 
 [recommended Rust installation method]: https://www.rust-lang.org/tools/install
 
