@@ -54,7 +54,7 @@ pub struct PeerState {
     node_id: String,
     status: PeerStatus,
     consecutive_misses: u8,
-    last_pong_round: u8,
+    last_pong_round: u32,
     total_pings_sent: u8,
     total_pongs_received: u8,
 }
@@ -149,8 +149,18 @@ impl HeartbeatNode {
     /// Args:
     ///     from_node:     node_id of the peer who replied
     ///     current_round: current poll round number
-    pub fn receive_pong(&self, from_node: String, current_round: u32) {
-        todo!()
+    pub fn receive_pong(&mut self, from_node: String, current_round: u32) {
+        if let Some(peer) = self.peers.get_mut(&from_node) {
+            peer.total_pongs_received += 1;
+            peer.last_pong_round = current_round;
+            let old = peer.status;
+            peer.consecutive_misses = 0;
+            peer.status = PeerStatus::Alive;
+
+            if old != PeerStatus::Alive {
+                self.log.push(format!("  Round {current_round}: {from_node} recovered ({old} -> ALIVE)"));
+            }
+        }
     }
 
     /// Record that a PING got no PONG from this peer this round.
