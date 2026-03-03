@@ -190,8 +190,19 @@ impl GossipNode {
     ///
     /// A peer that has not been mentioned in any gossip for `ttl` rounds
     /// should be removed from the table.
-    pub fn age_entries(&self) {
-        todo!()
+    pub fn age_entries(&mut self) {
+        let mut expired = Vec::new();
+        for (peer_id, entry) in &mut self.peers {
+            entry.time_to_live -= 1;
+
+            if entry.is_expired() {
+                expired.push(peer_id.clone());
+            }
+        }
+
+        for peer_id in expired {
+            drop(self.peers.remove(&peer_id));
+        }
     }
 
     /// Pick a random peer to send a PEER_LIST to.
