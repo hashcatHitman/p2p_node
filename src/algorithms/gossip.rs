@@ -177,14 +177,14 @@ mod test {
 
     #[test]
     fn add_peer_increases_count() {
-        let node = GossipNode::new("node-a".to_owned(), String::new());
+        let mut node = GossipNode::new("node-a".to_owned(), String::new());
         node.add_peer("node-b".to_owned(), "https://sqs.fake/b".to_owned());
         assert_eq!(node.known_peer_count(), 1);
     }
 
     #[test]
     fn add_same_peer_twice_no_duplicate() {
-        let node = GossipNode::new("node-a".to_owned(), String::new());
+        let mut node = GossipNode::new("node-a".to_owned(), String::new());
         node.add_peer("node-b".to_owned(), "https://sqs.fake/b".to_owned());
         node.add_peer("node-b".to_owned(), "https://sqs.fake/b".to_owned());
         assert_eq!(node.known_peer_count(), 1);
@@ -192,7 +192,7 @@ mod test {
 
     #[test]
     fn pick_target_returns_known_peer() {
-        let node = GossipNode::new("node-a".to_owned(), String::new());
+        let mut node = GossipNode::new("node-a".to_owned(), String::new());
         node.add_peer("node-b".to_owned(), "https://sqs.fake/b".to_owned());
         node.add_peer("node-c".to_owned(), "https://sqs.fake/c".to_owned());
         let target = node.pick_gossip_target();
@@ -207,7 +207,7 @@ mod test {
 
     #[test]
     fn pick_target_none_when_empty() {
-        let node = GossipNode::new("node-a".to_owned(), String::new());
+        let mut node = GossipNode::new("node-a".to_owned(), String::new());
         node.add_peer("node-b".to_owned(), "https://sqs.fake/b".to_owned());
         node.add_peer("node-c".to_owned(), "https://sqs.fake/c".to_owned());
         let target = node.pick_gossip_target();
@@ -216,7 +216,7 @@ mod test {
 
     #[test]
     fn peer_list_message_format() {
-        let node = GossipNode::new(
+        let mut node = GossipNode::new(
             "node-a".to_owned(),
             "https://sqs.fake/a".to_owned(),
         );
@@ -231,7 +231,7 @@ mod test {
 
     #[test]
     fn receive_discovers_new_peer() {
-        let node = GossipNode::new("node-a".to_owned(), String::new());
+        let mut node = GossipNode::new("node-a".to_owned(), String::new());
         node.add_peer("node-b".to_owned(), "https://sqs.fake/b".to_owned());
         let incoming = vec![
             json!({"node_id": "node-c", "queue_url": "https://sqs.fake/c"}),
@@ -243,7 +243,7 @@ mod test {
 
     #[test]
     fn receive_no_false_new_for_existing_peer() {
-        let node = GossipNode::new("node-a".to_owned(), String::new());
+        let mut node = GossipNode::new("node-a".to_owned(), String::new());
         node.add_peer("node-b".to_owned(), "https://sqs.fake/b".to_owned());
         let incoming = vec![
             json!({"node_id": "node-b", "queue_url": "https://sqs.fake/b"}),
@@ -254,7 +254,7 @@ mod test {
 
     #[test]
     fn age_entries_expires_peers() {
-        let node = GossipNode::new("node-a".to_owned(), String::new());
+        let mut node = GossipNode::new("node-a".to_owned(), String::new());
         node.add_peer("node-b".to_owned(), "https://sqs.fake/b".to_owned());
 
         for _ in 0..10 {
@@ -266,7 +266,7 @@ mod test {
 
     #[test]
     fn does_not_target_self() {
-        let node = GossipNode::new("node-a".to_owned(), String::new());
+        let mut node = GossipNode::new("node-a".to_owned(), String::new());
         node.add_peer("node-b".to_owned(), "https://sqs.fake/b".to_owned());
 
         for _ in 0..20 {
