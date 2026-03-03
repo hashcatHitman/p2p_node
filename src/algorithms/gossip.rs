@@ -233,8 +233,8 @@ mod test {
         let msg = node.get_peer_list_message();
         assert!(!msg.is_empty());
         for entry in msg {
-            assert!(entry.contains_key("node_id"));
-            assert!(entry.contains_key("queue_url"));
+            assert!(entry.get("node_id").is_some());
+            assert!(entry.get("queue_url").is_some());
         }
     }
 
