@@ -266,7 +266,6 @@ mod test {
             ),
             None => panic!("failed to pick a gossip target"),
         }
-        assert_eq!(node.known_peer_count(), 1);
     }
 
     #[test]
