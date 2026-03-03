@@ -29,6 +29,8 @@ use core::fmt;
 use core::fmt::Display;
 use std::collections::HashMap;
 
+use serde_json::json;
+
 /// A single known peer in the gossip table.
 #[derive(Debug, Clone)]
 pub struct PeerEntry {
@@ -45,6 +47,15 @@ pub struct PeerEntry {
 }
 
 impl PeerEntry {
+    pub fn new(node_id: String, queue_url: String) -> Self {
+        Self {
+            node_id,
+            queue_url,
+            last_seen: 0.0,
+            time_to_live: 5,
+        }
+    }
+
     const fn is_expired(&self) -> bool {
         self.time_to_live <= 0
     }
@@ -87,8 +98,15 @@ impl GossipNode {
     /// Args:
     ///    node_id:   The peer's identifier.
     ///    queue_url: The peer's SQS queue URL.
-    pub fn add_peer(&self, node_id: String, queue_url: String) {
-        todo!()
+    pub fn add_peer(&mut self, node_id: String, queue_url: String) {
+        if self.node_id != node_id && !self.peers.contains_key(&node_id) {
+            drop(
+                self.peers.insert(
+                    node_id.clone(),
+                    PeerEntry::new(node_id, queue_url),
+                ),
+            );
+        }
     }
 
     /// Build a PEER_LIST message payload (list of dicts to send over SQS).
