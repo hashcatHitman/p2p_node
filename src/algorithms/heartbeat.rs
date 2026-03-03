@@ -127,8 +127,16 @@ impl HeartbeatNode {
     ///
     /// Returns:
     ///     List of peer_ids that should receive a PING this round.
-    pub fn send_pings(&self, current_round: u32) -> Vec<String> {
-        todo!()
+    pub fn send_pings(&mut self, current_round: u32) -> Vec<String> {
+        let mut pinged = Vec::new();
+
+        for (peer_id, state) in &mut self.peers {
+            if state.status == PeerStatus::Dead {
+                state.total_pings_sent += 1;
+                pinged.push(peer_id.clone());
+            }
+        }
+        pinged
     }
 
     /// Process a PONG response from a peer.
