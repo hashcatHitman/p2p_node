@@ -113,8 +113,17 @@ impl GossipNode {
     ///
     /// Returns a list of {"node_id": ..., "queue_url": ...} dicts for all
     /// known non-expired peers. Include yourself so recipients know your URL.
-    pub fn get_peer_list_message(&self) -> Vec<HashMap<String, String>> {
-        todo!()
+    pub fn get_peer_list_message(&self) -> Vec<serde_json::Value> {
+        let mut entries = Vec::new();
+        for peer in self.peers.values() {
+            entries.push(
+                json!({"node_id": peer.node_id, "queue_url": peer.queue_url}),
+            );
+        }
+        entries.push(
+            json!({"node_id": self.node_id, "queue_url": self.queue_url}),
+        );
+        entries
     }
 
     /// Merge an incoming peer list with our own.
