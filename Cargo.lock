@@ -3,5 +3,5 @@
 version = 4
 
 [[package]]
-name = "rust_project_template"
+name = "p2p_node"
 version = "0.1.0"

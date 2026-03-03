@@ -3,18 +3,18 @@
 # SPDX-License-Identifier: Apache-2.0 OR MIT
 
 [package]
-name = "rust_project_template"
+name = "p2p_node"
 version = "0.1.0"
 edition = "2024"
-rust-version = "1.89.0"
+rust-version = "1.93.1"
 description = """
 A base for me to use as the starting point of my projects written in Rust.
 """
 readme = "README.md"
-repository = "https://github.com/hashcatHitman/rust_project_template"
+repository = "https://github.com/hashcatHitman/p2p_node"
 license = "Apache-2.0 OR MIT"
-keywords = ["project-template"]
-categories = ["rust-patterns", "development-tools"]
+keywords = ["p2p", "distributed-computing"]
+categories = ["command-line-utilities"]
 publish = false
 
 [profile.release]
