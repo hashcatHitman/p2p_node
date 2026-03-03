@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: Copyright © 2025 hashcatHitman
+//
+// SPDX-License-Identifier: Apache-2.0 OR MIT
+
 //! Module 1: Gossip Protocol
 //! =========================
 //!
