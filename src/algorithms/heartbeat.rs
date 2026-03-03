@@ -198,3 +198,137 @@ impl Display for HeartbeatNode {
         )
     }
 }
+
+#[expect(clippy::missing_panics_doc, reason = "tests tend to do that")]
+#[cfg(test)]
+mod test {
+    use std::collections::HashSet;
+
+    use crate::algorithms::heartbeat::HeartbeatNode;
+
+    #[test]
+    fn new_peer_is_alive() {
+        let node = HeartbeatNode::new("node-a".to_owned(), 3, 2);
+        node.add_peer("node-b".to_owned());
+        let living = node.get_alive_peers();
+        assert!(living.contains(&"node-b".to_owned()));
+    }
+
+    #[test]
+    fn send_pings_returns_alive_peers() {
+        let node = HeartbeatNode::new("node-a".to_owned(), 3, 2);
+        node.add_peer("node-b".to_owned());
+        node.add_peer("node-c".to_owned());
+        let pinged = node.send_pings(1);
+        assert!(pinged.contains(&"node-b".to_owned()));
+        assert!(pinged.contains(&"node-c".to_owned()));
+    }
+
+    #[test]
+    fn pong_keeps_peer_alive() {
+        let node = HeartbeatNode::new("node-a".to_owned(), 3, 2);
+        node.add_peer("node-b".to_owned());
+        drop(node.send_pings(1));
+        node.receive_pong("node-b".to_owned(), 1);
+        let living = node.get_alive_peers();
+        assert!(living.contains(&"node-b".to_owned()));
+    }
+
+    #[test]
+    fn grace_period_misses_produces_suspect() {
+        const GRACE: u8 = 2;
+        let node = HeartbeatNode::new("node-a".to_owned(), 5, GRACE);
+        node.add_peer("node-b".to_owned());
+
+        for round in 1..=GRACE {
+            drop(node.send_pings(round.into()));
+            node.record_miss("node-b".to_owned(), round.into());
+        }
+
+        let suspicious = node.get_suspect_peers();
+        assert!(suspicious.contains(&"node-b".to_owned()));
+
+        let dead = node.get_dead_peers();
+        assert!(!dead.contains(&"node-b".to_owned()));
+    }
+
+    #[test]
+    fn threshold_misses_produces_dead() {
+        const THRESHOLD: u8 = 3;
+        let node = HeartbeatNode::new("node-a".to_owned(), THRESHOLD, 2);
+        node.add_peer("node-b".to_owned());
+
+        for round in 1..=THRESHOLD {
+            drop(node.send_pings(round.into()));
+            node.record_miss("node-b".to_owned(), round.into());
+        }
+
+        let dead = node.get_dead_peers();
+        assert!(dead.contains(&"node-b".to_owned()));
+    }
+
+    #[test]
+    fn pong_after_suspect_restores_alive() {
+        let node = HeartbeatNode::new("node-a".to_owned(), 5, 2);
+        node.add_peer("node-b".to_owned());
+
+        for round in 1..=2 {
+            drop(node.send_pings(round));
+            node.record_miss("node-b".to_owned(), round);
+        }
+
+        let suspicious = node.get_suspect_peers();
+        assert!(suspicious.contains(&"node-b".to_owned()));
+
+        node.receive_pong("node-b".to_owned(), 3);
+
+        let living = node.get_alive_peers();
+        assert!(living.contains(&"node-b".to_owned()));
+
+        let suspicious = node.get_suspect_peers();
+        assert!(!suspicious.contains(&"node-b".to_owned()));
+    }
+
+    #[test]
+    fn dead_peers_not_pinged() {
+        let node = HeartbeatNode::new("node-a".to_owned(), 3, 2);
+        node.add_peer("node-b".to_owned());
+
+        for round in 1..4 {
+            drop(node.send_pings(round));
+            node.record_miss("node-b".to_owned(), round);
+        }
+
+        let dead = node.get_dead_peers();
+        assert!(dead.contains(&"node-b".to_owned()));
+
+        let pinged = node.send_pings(4);
+        assert!(!pinged.contains(&"node-b".to_owned()));
+    }
+
+    #[test]
+    fn lists_are_disjoint() {
+        let node = HeartbeatNode::new("node-a".to_owned(), 3, 2);
+        node.add_peer("node-b".to_owned());
+        node.add_peer("node-c".to_owned());
+        node.add_peer("node-d".to_owned());
+
+        for round in 1..3 {
+            node.record_miss("node-b".to_owned(), round);
+        }
+
+        for round in 1..4 {
+            node.record_miss("node-c".to_owned(), round);
+        }
+
+        let living: HashSet<String> =
+            node.get_alive_peers().into_iter().collect();
+        let suspicious: HashSet<String> =
+            node.get_suspect_peers().into_iter().collect();
+        let dead: HashSet<String> = node.get_dead_peers().into_iter().collect();
+
+        assert!(living.is_disjoint(&suspicious));
+        assert!(living.is_disjoint(&dead));
+        assert!(suspicious.is_disjoint(&dead));
+    }
+}
