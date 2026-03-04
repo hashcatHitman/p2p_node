@@ -46,3 +46,7 @@ criteria = "safe-to-deploy"
 [[exemptions.hashbrown]]
 version = "0.16.1"
 criteria = "safe-to-deploy"
+
+[[exemptions.heck]]
+version = "0.5.0"
+criteria = "safe-to-deploy"
