@@ -209,7 +209,11 @@ impl ChokingNode {
 
     /// Return node_ids of all currently choked peers.
     pub fn get_choked_peers(&self) -> Vec<String> {
-        todo!()
+        self.peers
+            .iter()
+            .filter(|&(_id, state)| state.is_choked)
+            .map(|(id, _state)| id.clone())
+            .collect()
     }
 
     pub fn flush_log(&mut self) -> Vec<String> {
