@@ -106,3 +106,7 @@ criteria = "safe-to-deploy"
 [[exemptions.semver]]
 version = "1.0.27"
 criteria = "safe-to-deploy"
+
+[[exemptions.serde]]
+version = "1.0.228"
+criteria = "safe-to-deploy"
