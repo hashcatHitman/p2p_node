@@ -50,3 +50,7 @@ criteria = "safe-to-deploy"
 [[exemptions.heck]]
 version = "0.5.0"
 criteria = "safe-to-deploy"
+
+[[exemptions.id-arena]]
+version = "2.3.0"
+criteria = "safe-to-deploy"
