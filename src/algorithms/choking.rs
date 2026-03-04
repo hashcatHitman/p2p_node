@@ -163,7 +163,7 @@ mod test {
 
     #[test]
     fn new_peer_starts_choked() {
-        let node = ChokingNode::new("node-a".to_owned(), 2, 3);
+        let mut node = ChokingNode::new("node-a".to_owned(), 2, 3);
         node.add_peer("node-b".to_owned(), true);
         node.add_peer("node-c".to_owned(), true);
         let unchoked = node.get_unchoked_peers();
@@ -172,7 +172,7 @@ mod test {
 
     #[test]
     fn top_contributor_gets_unchoked() {
-        let node = ChokingNode::new("node-a".to_owned(), 1, 999);
+        let mut node = ChokingNode::new("node-a".to_owned(), 1, 999);
         node.add_peer("node-b".to_owned(), true);
         node.add_peer("node-c".to_owned(), true);
 
@@ -189,7 +189,7 @@ mod test {
 
     #[test]
     fn max_unchoked_limit_respected() {
-        let node = ChokingNode::new("node-a".to_owned(), 2, 999);
+        let mut node = ChokingNode::new("node-a".to_owned(), 2, 999);
 
         for peer in ["node-b", "node-c", "node-d", "node-e"] {
             node.add_peer(peer.to_owned(), true);
@@ -204,7 +204,7 @@ mod test {
 
     #[test]
     fn choked_and_unchoked_disjoint() {
-        let node = ChokingNode::new("node-a".to_owned(), 2, 999);
+        let mut node = ChokingNode::new("node-a".to_owned(), 2, 999);
 
         for peer in ["node-b", "node-c", "node-d"] {
             node.add_peer(peer.to_owned(), true);
@@ -223,7 +223,7 @@ mod test {
 
     #[test]
     fn free_rider_stays_choked() {
-        let node = ChokingNode::new("node-a".to_owned(), 2, 999);
+        let mut node = ChokingNode::new("node-a".to_owned(), 2, 999);
 
         for peer in ["node-b", "node-c", "node-d"] {
             node.add_peer(peer.to_owned(), true);
@@ -243,7 +243,7 @@ mod test {
 
     #[test]
     fn optimistic_unchoke_occurs() {
-        let node = ChokingNode::new("node-a".to_owned(), 1, 1);
+        let mut node = ChokingNode::new("node-a".to_owned(), 1, 1);
 
         for peer in ["node-b", "node-c", "node-d"] {
             node.add_peer(peer.to_owned(), true);
