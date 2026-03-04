@@ -54,3 +54,7 @@ criteria = "safe-to-deploy"
 [[exemptions.id-arena]]
 version = "2.3.0"
 criteria = "safe-to-deploy"
+
+[[exemptions.indexmap]]
+version = "2.13.0"
+criteria = "safe-to-deploy"
