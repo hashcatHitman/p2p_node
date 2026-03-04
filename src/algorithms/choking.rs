@@ -113,6 +113,10 @@ impl ChokingNode {
     }
 
     /// Record that we served `units` to a peer.
+    #[expect(
+        clippy::todo,
+        reason = "record where? why does the assignment include this API?"
+    )]
     pub fn record_serving(&self, to_peer: String, units: u32) {
         todo!()
     }
