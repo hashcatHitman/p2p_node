@@ -82,3 +82,7 @@ criteria = "safe-to-deploy"
 [[exemptions.prettyplease]]
 version = "0.2.37"
 criteria = "safe-to-deploy"
+
+[[exemptions.proc-macro2]]
+version = "1.0.106"
+criteria = "safe-to-deploy"
