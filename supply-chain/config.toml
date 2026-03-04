@@ -166,3 +166,7 @@ criteria = "safe-to-deploy"
 [[exemptions.wit-bindgen-rust]]
 version = "0.51.0"
 criteria = "safe-to-deploy"
+
+[[exemptions.wit-bindgen-rust-macro]]
+version = "0.51.0"
+criteria = "safe-to-deploy"
