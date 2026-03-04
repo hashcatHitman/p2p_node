@@ -224,8 +224,12 @@ impl HeartbeatNode {
     }
 
     /// Remove DEAD peers from the tracking table.
-    pub fn prune_dead(&self) {
-        todo!()
+    pub fn prune_dead(&mut self) {
+        let dead = self.get_dead_peers();
+
+        for peer in dead {
+            drop(self.peers.remove(&peer));
+        }
     }
 
     pub fn flush_log(&mut self) -> Vec<String> {
