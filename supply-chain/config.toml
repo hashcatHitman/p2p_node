@@ -38,3 +38,7 @@ criteria = "safe-to-deploy"
 [[exemptions.getrandom]]
 version = "0.4.2"
 criteria = "safe-to-deploy"
+
+[[exemptions.hashbrown]]
+version = "0.15.5"
+criteria = "safe-to-deploy"
