@@ -15,5 +15,6 @@
 //!   4. chord       - DHT (distributed hash table)
 //!   5. reputation  - Trust scoring and weighted voting
 
+pub mod choking;
 pub mod gossip;
 pub mod heartbeat;
