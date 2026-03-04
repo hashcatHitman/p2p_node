@@ -10,3 +10,7 @@ url = "https://raw.githubusercontent.com/hashcatHitman/supply-chain/main/audits.
 [[exemptions.anyhow]]
 version = "1.0.102"
 criteria = "safe-to-deploy"
+
+[[exemptions.bitflags]]
+version = "2.11.0"
+criteria = "safe-to-deploy"
