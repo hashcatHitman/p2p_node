@@ -22,3 +22,7 @@ criteria = "safe-to-deploy"
 [[exemptions.chacha20]]
 version = "0.10.0"
 criteria = "safe-to-deploy"
+
+[[exemptions.cpufeatures]]
+version = "0.3.0"
+criteria = "safe-to-deploy"
