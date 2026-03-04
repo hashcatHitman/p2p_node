@@ -174,8 +174,26 @@ impl HeartbeatNode {
     /// Args:
     ///     peer_id:       node_id of the non-responding peer
     ///     current_round: current poll round number
-    pub fn record_miss(&self, peer_id: String, current_round: u32) {
-        todo!()
+    pub fn record_miss(&mut self, peer_id: String, current_round: u32) {
+        if let Some(peer) = self.peers.get_mut(&peer_id) {
+            if peer.status == PeerStatus::Dead {
+                return;
+            }
+
+            peer.consecutive_misses += 1;
+
+            let old = peer.status;
+
+            if peer.consecutive_misses >= self.miss_threshold {
+                peer.status = PeerStatus::Dead;
+            } else if peer.consecutive_misses >= self.grace_period {
+                peer.status = PeerStatus::Suspect;
+            }
+
+            if peer.status != old {
+                self.log.push(format!("  Round {current_round}: {peer_id} {old} -> {} (misses={})",peer.status, peer.consecutive_misses));
+            }
+        }
     }
 
     /// Return node_ids of all ALIVE peers.
