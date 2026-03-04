@@ -14,3 +14,7 @@ criteria = "safe-to-deploy"
 [[exemptions.bitflags]]
 version = "2.11.0"
 criteria = "safe-to-deploy"
+
+[[exemptions.cfg-if]]
+version = "1.0.4"
+criteria = "safe-to-deploy"
