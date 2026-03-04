@@ -198,7 +198,11 @@ impl HeartbeatNode {
 
     /// Return node_ids of all ALIVE peers.
     pub fn get_alive_peers(&self) -> Vec<String> {
-        todo!()
+        self.peers
+            .iter()
+            .filter(|&(_id, state)| state.status == PeerStatus::Alive)
+            .map(|(id, _state)| id.clone())
+            .collect()
     }
 
     /// Return node_ids of all SUSPECT peers.
