@@ -20,11 +20,6 @@
 //!
 //! Run the Algorithm Labs notebook to see the state machine in action
 //! before implementing it here.
-#![expect(
-    clippy::doc_markdown,
-    clippy::doc_paragraphs_missing_punctuation,
-    reason = "the docs are as they were meant to be, for now"
-)]
 
 use core::fmt;
 use core::fmt::Display;

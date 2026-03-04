@@ -20,14 +20,6 @@
 //!
 //! Run the Algorithm Labs notebook to see gossip convergence in action
 //! before implementing it here.
-#![expect(
-    clippy::doc_markdown,
-    reason = "the docs are as they were meant to be, for now"
-)]
-#![allow(
-    clippy::missing_docs_in_private_items,
-    reason = "the docs are as they were meant to be, for now"
-)]
 
 use core::fmt;
 use core::fmt::Display;

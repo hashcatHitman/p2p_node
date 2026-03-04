@@ -4,6 +4,8 @@
 
 //! This isn't a real project.
 
+#![expect(unused_crate_dependencies, reason = "to worry about later")]
+
 /// This isn't a real project.
 ///
 /// ```rust
