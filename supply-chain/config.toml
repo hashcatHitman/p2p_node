@@ -118,3 +118,7 @@ criteria = "safe-to-deploy"
 [[exemptions.serde_derive]]
 version = "1.0.228"
 criteria = "safe-to-deploy"
+
+[[exemptions.serde_json]]
+version = "1.0.149"
+criteria = "safe-to-deploy"
