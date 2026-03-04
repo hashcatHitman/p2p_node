@@ -22,7 +22,9 @@
 
 use core::fmt;
 use core::fmt::Display;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
+
+use rand::prelude::IndexedRandom as _;
 
 /// Tracks a single peer's contribution and choking state.
 #[derive(Debug, Clone)]
@@ -128,8 +130,72 @@ impl ChokingNode {
     ///      Log those changes via self._log.
     ///
     /// Note: Only unchoke peers where is_interested == True.
-    pub fn run_choking_round(&self) {
-        todo!()
+    pub fn run_choking_round(&mut self) {
+        self.round += 1;
+
+        let mut interested: Vec<(String, PeerTracker)> = self
+            .peers
+            .iter()
+            .filter(|&(node_id, tracker)| tracker.is_interested)
+            .map(|(node_id, tracker)| (node_id.clone(), tracker.clone()))
+            .collect();
+
+        if interested.is_empty() {
+            return;
+        }
+
+        let mut ranked = interested.clone();
+        #[expect(clippy::pattern_type_mismatch, reason = "todo later")]
+        ranked.sort_by_key(|(node_id, tracker)| tracker.contributed);
+        ranked.reverse();
+
+        let regular_slots = self.max_unchoked - 1;
+        let mut to_unchoke = HashSet::new();
+
+        #[expect(clippy::pattern_type_mismatch, reason = "todo later")]
+        for (peer, tracker) in ranked.iter().take(regular_slots.into()) {
+            let _: bool = to_unchoke.insert(peer);
+        }
+
+        if self.round.is_multiple_of(self.optimistic_interval) {
+            #[expect(clippy::pattern_type_mismatch, reason = "todo later")]
+            let choked_interested: Vec<&(String, PeerTracker)> = ranked
+                .iter()
+                .filter(|(node_id, tracker)| !to_unchoke.contains(node_id))
+                .collect();
+
+            #[expect(clippy::pattern_type_mismatch, reason = "todo later")]
+            if let Some((lucky_peer, tracker)) =
+                choked_interested.choose(&mut rand::rng())
+            {
+                self.optimistic_peer = Some(lucky_peer.clone());
+            }
+        }
+
+        if let Some(ref lucky_peer) = self.optimistic_peer {
+            let _: bool = to_unchoke.insert(lucky_peer);
+        }
+
+        for (node_id, mut tracker) in interested {
+            let old_choked = tracker.is_choked;
+            tracker.is_choked = !to_unchoke.contains(&node_id);
+
+            if tracker.is_choked {
+                tracker.rounds_choked += 1;
+            }
+
+            if old_choked && !tracker.is_choked {
+                self.log.push(format!(
+                    "  Round {}: UNCHOKED {} (contributed={})",
+                    self.round, node_id, tracker.contributed
+                ));
+            } else if !old_choked && tracker.is_choked {
+                self.log.push(format!(
+                    "  Round {}: CHOKED {} (contributed={})",
+                    self.round, node_id, tracker.contributed
+                ));
+            }
+        }
     }
 
     /// Return node_ids of all currently unchoked peers.
