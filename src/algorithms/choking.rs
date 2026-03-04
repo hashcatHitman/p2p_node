@@ -149,7 +149,9 @@ impl ChokingNode {
         ranked.sort_by_key(|(node_id, tracker)| tracker.contributed);
         ranked.reverse();
 
-        let regular_slots = self.max_unchoked - 1;
+        let optimism = self.round.is_multiple_of(self.optimistic_interval);
+
+        let regular_slots = self.max_unchoked - u8::from(optimism);
         let mut to_unchoke = HashSet::new();
 
         #[expect(clippy::pattern_type_mismatch, reason = "todo later")]
@@ -157,7 +159,7 @@ impl ChokingNode {
             let _: bool = to_unchoke.insert(peer);
         }
 
-        if self.round.is_multiple_of(self.optimistic_interval) {
+        if optimism {
             #[expect(clippy::pattern_type_mismatch, reason = "todo later")]
             let choked_interested: Vec<&(String, PeerTracker)> = ranked
                 .iter()
@@ -176,24 +178,26 @@ impl ChokingNode {
             let _: bool = to_unchoke.insert(lucky_peer);
         }
 
-        for (node_id, mut tracker) in interested {
-            let old_choked = tracker.is_choked;
-            tracker.is_choked = !to_unchoke.contains(&node_id);
+        for (node_id, _) in interested {
+            if let Some(peer) = self.peers.get_mut(&node_id) {
+                let old_choked = peer.is_choked;
+                peer.is_choked = !to_unchoke.contains(&node_id);
 
-            if tracker.is_choked {
-                tracker.rounds_choked += 1;
-            }
+                if peer.is_choked {
+                    peer.rounds_choked += 1;
+                }
 
-            if old_choked && !tracker.is_choked {
-                self.log.push(format!(
-                    "  Round {}: UNCHOKED {} (contributed={})",
-                    self.round, node_id, tracker.contributed
-                ));
-            } else if !old_choked && tracker.is_choked {
-                self.log.push(format!(
-                    "  Round {}: CHOKED {} (contributed={})",
-                    self.round, node_id, tracker.contributed
-                ));
+                if old_choked && !peer.is_choked {
+                    self.log.push(format!(
+                        "  Round {}: UNCHOKED {} (contributed={})",
+                        self.round, node_id, peer.contributed
+                    ));
+                } else if !old_choked && peer.is_choked {
+                    self.log.push(format!(
+                        "  Round {}: CHOKED {} (contributed={})",
+                        self.round, node_id, peer.contributed
+                    ));
+                }
             }
         }
     }
