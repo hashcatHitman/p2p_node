@@ -34,3 +34,7 @@ criteria = "safe-to-deploy"
 [[exemptions.foldhash]]
 version = "0.1.5"
 criteria = "safe-to-deploy"
+
+[[exemptions.getrandom]]
+version = "0.4.2"
+criteria = "safe-to-deploy"
