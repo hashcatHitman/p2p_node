@@ -154,7 +154,7 @@ impl GossipNode {
                     }
 
                     if let Some(peer) = self.peers.get_mut(&node_id) {
-                        peer.time_to_live = 5
+                        peer.time_to_live = 5;
                     } else {
                         let queue_url = entry
                             .get("queue_url")
