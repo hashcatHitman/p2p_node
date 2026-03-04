@@ -19,10 +19,6 @@
 //! by everyone and stall.
 //!
 //! Run the Algorithm Labs notebook before implementing this.
-#![expect(
-    clippy::doc_markdown,
-    reason = "the docs are as they were meant to be, for now"
-)]
 
 use core::fmt;
 use core::fmt::Display;
