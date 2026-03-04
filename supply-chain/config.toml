@@ -18,3 +18,7 @@ criteria = "safe-to-deploy"
 [[exemptions.cfg-if]]
 version = "1.0.4"
 criteria = "safe-to-deploy"
+
+[[exemptions.chacha20]]
+version = "0.10.0"
+criteria = "safe-to-deploy"
