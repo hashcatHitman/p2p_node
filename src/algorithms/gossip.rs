@@ -44,7 +44,7 @@ pub struct PeerEntry {
 }
 
 impl PeerEntry {
-    pub fn new(node_id: String, queue_url: String) -> Self {
+    pub const fn new(node_id: String, queue_url: String) -> Self {
         Self {
             node_id,
             queue_url,
