@@ -6,3 +6,7 @@ version = "0.10"
 
 [imports.hashcatHitman]
 url = "https://raw.githubusercontent.com/hashcatHitman/supply-chain/main/audits.toml"
+
+[[exemptions.anyhow]]
+version = "1.0.102"
+criteria = "safe-to-deploy"
