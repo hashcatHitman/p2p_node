@@ -131,7 +131,7 @@ impl HeartbeatNode {
         let mut pinged = Vec::new();
 
         for (peer_id, state) in &mut self.peers {
-            if state.status == PeerStatus::Dead {
+            if state.status != PeerStatus::Dead {
                 state.total_pings_sent += 1;
                 pinged.push(peer_id.clone());
             }
