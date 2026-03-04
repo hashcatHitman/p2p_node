@@ -216,7 +216,11 @@ impl HeartbeatNode {
 
     /// Return node_ids of all DEAD peers.
     pub fn get_dead_peers(&self) -> Vec<String> {
-        todo!()
+        self.peers
+            .iter()
+            .filter(|&(_id, state)| state.status == PeerStatus::Dead)
+            .map(|(id, _state)| id.clone())
+            .collect()
     }
 
     /// Remove DEAD peers from the tracking table.
