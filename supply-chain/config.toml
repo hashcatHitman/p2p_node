@@ -62,3 +62,7 @@ criteria = "safe-to-deploy"
 [[exemptions.itoa]]
 version = "1.0.17"
 criteria = "safe-to-deploy"
+
+[[exemptions.leb128fmt]]
+version = "0.1.0"
+criteria = "safe-to-deploy"
