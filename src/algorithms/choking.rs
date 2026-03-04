@@ -150,3 +150,106 @@ impl Display for ChokingNode {
         write!(f, "ChokingNode({}, unchoked={:?})", self.node_id, unchoked)
     }
 }
+
+#[expect(clippy::missing_panics_doc, reason = "tests tend to do that")]
+#[cfg(test)]
+mod test {
+    use std::collections::HashSet;
+
+    use crate::algorithms::choking::ChokingNode;
+
+    #[test]
+    fn new_peer_starts_choked() {
+        let node = ChokingNode::new("node-a".to_owned(), 2, 3);
+        node.add_peer("node-b".to_owned(), true);
+        node.add_peer("node-c".to_owned(), true);
+        let unchoked = node.get_unchoked_peers();
+        assert!(!unchoked.contains(&"node-b".to_owned()));
+    }
+
+    #[test]
+    fn top_contributor_gets_unchoked() {
+        let node = ChokingNode::new("node-a".to_owned(), 1, 999);
+        node.add_peer("node-b".to_owned(), true);
+        node.add_peer("node-c".to_owned(), true);
+
+        for _ in 0..10 {
+            node.record_contribution("node-b".to_owned(), 5);
+        }
+
+        node.run_choking_round();
+
+        let unchoked = node.get_unchoked_peers();
+        assert!(unchoked.contains(&"node-b".to_owned()));
+        assert!(!unchoked.contains(&"node-c".to_owned()));
+    }
+
+    #[test]
+    fn max_unchoked_limit_respected() {
+        let node = ChokingNode::new("node-a".to_owned(), 2, 999);
+
+        for peer in ["node-b", "node-c", "node-d", "node-e"] {
+            node.add_peer(peer.to_owned(), true);
+            node.record_contribution(peer.to_owned(), 1);
+        }
+
+        node.run_choking_round();
+
+        let unchoked = node.get_unchoked_peers();
+        assert!(unchoked.len() <= 2);
+    }
+
+    #[test]
+    fn choked_and_unchoked_disjoint() {
+        let node = ChokingNode::new("node-a".to_owned(), 2, 999);
+
+        for peer in ["node-b", "node-c", "node-d"] {
+            node.add_peer(peer.to_owned(), true);
+            node.record_contribution(peer.to_owned(), 1);
+        }
+
+        node.run_choking_round();
+
+        let unchoked: HashSet<String> =
+            node.get_unchoked_peers().into_iter().collect();
+        let choked: HashSet<String> =
+            node.get_choked_peers().into_iter().collect();
+
+        assert!(unchoked.is_disjoint(&choked));
+    }
+
+    #[test]
+    fn free_rider_stays_choked() {
+        let node = ChokingNode::new("node-a".to_owned(), 2, 999);
+
+        for peer in ["node-b", "node-c", "node-d"] {
+            node.add_peer(peer.to_owned(), true);
+        }
+
+        node.record_contribution("node-b".to_owned(), 10);
+        node.record_contribution("node-c".to_owned(), 8);
+
+        for _ in 0..3 {
+            node.run_choking_round();
+        }
+
+        let choked = node.get_choked_peers();
+
+        assert!(choked.contains(&"node-d".to_owned()));
+    }
+
+    #[test]
+    fn optimistic_unchoke_occurs() {
+        let node = ChokingNode::new("node-a".to_owned(), 1, 1);
+
+        for peer in ["node-b", "node-c", "node-d"] {
+            node.add_peer(peer.to_owned(), true);
+        }
+
+        node.run_choking_round();
+
+        let unchoked = node.get_unchoked_peers();
+
+        assert!(!unchoked.is_empty());
+    }
+}
