@@ -104,8 +104,10 @@ impl ChokingNode {
     }
 
     /// Record that a peer contributed `units` to us.
-    pub fn record_contribution(&self, from_peer: String, units: u32) {
-        todo!()
+    pub fn record_contribution(&mut self, from_peer: String, units: u32) {
+        if let Some(peer) = self.peers.get_mut(&from_peer) {
+            peer.contributed += units;
+        }
     }
 
     /// Record that we served `units` to a peer.
