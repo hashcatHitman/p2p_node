@@ -102,3 +102,7 @@ criteria = "safe-to-deploy"
 [[exemptions.rand_core]]
 version = "0.10.0"
 criteria = "safe-to-deploy"
+
+[[exemptions.semver]]
+version = "1.0.27"
+criteria = "safe-to-deploy"
