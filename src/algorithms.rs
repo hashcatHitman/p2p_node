@@ -18,3 +18,4 @@
 pub mod choking;
 pub mod gossip;
 pub mod heartbeat;
+pub mod reputation;
