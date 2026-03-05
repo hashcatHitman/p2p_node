@@ -158,8 +158,14 @@ impl ReputationNode {
     }
 
     /// Record a heartbeat event (whether the peer responded to a PING).
-    pub fn record_heartbeat(&self, peer_id: String, responded: bool) {
-        todo!()
+    pub fn record_heartbeat(&mut self, peer_id: String, responded: bool) {
+        if let Some(peer) = self.peers.get_mut(&peer_id) {
+            peer.heartbeats_total += 1;
+
+            if responded {
+                peer.heartbeats_responded += 1;
+            }
+        }
     }
 
     /// Record that a peer contributed `units` of data/messages to us.
