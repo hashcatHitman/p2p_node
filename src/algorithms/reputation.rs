@@ -213,7 +213,7 @@ mod test {
 
     #[test]
     fn new_peer_neutral_trust() {
-        let node = ReputationNode::new("node-a".to_owned());
+        let mut node = ReputationNode::new("node-a".to_owned());
         node.add_peer("node-b".to_owned());
 
         let ranked = node.get_ranked_peers();
@@ -225,7 +225,7 @@ mod test {
 
     #[test]
     fn accurate_peer_gains_trust() {
-        let node = ReputationNode::new("node-a".to_owned());
+        let mut node = ReputationNode::new("node-a".to_owned());
         node.add_peer("node-b".to_owned());
 
         for _ in 0..10 {
@@ -241,7 +241,7 @@ mod test {
 
     #[test]
     fn inaccurate_peer_loses_trust() {
-        let node = ReputationNode::new("node-a".to_owned());
+        let mut node = ReputationNode::new("node-a".to_owned());
         node.add_peer("node-b".to_owned());
 
         for _ in 0..10 {
@@ -257,7 +257,7 @@ mod test {
 
     #[test]
     fn ranking_order() {
-        let node = ReputationNode::new("node-a".to_owned());
+        let mut node = ReputationNode::new("node-a".to_owned());
         node.add_peer("node-b".to_owned());
         node.add_peer("node-c".to_owned());
 
@@ -275,7 +275,7 @@ mod test {
 
     #[test]
     fn weighted_vote_honest_beats_liar() {
-        let node = ReputationNode::new("node-a".to_owned());
+        let mut node = ReputationNode::new("node-a".to_owned());
         node.add_peer("node-b".to_owned());
         node.add_peer("node-c".to_owned());
 
@@ -299,7 +299,7 @@ mod test {
 
     #[test]
     fn confidence_higher_when_unanimous() {
-        let node = ReputationNode::new("node-a".to_owned());
+        let mut node = ReputationNode::new("node-a".to_owned());
 
         for peer in ["node-b", "node-c", "node-d"] {
             node.add_peer(peer.to_owned());
@@ -329,7 +329,7 @@ mod test {
 
     #[test]
     fn heartbeat_uptime_affects_trust() {
-        let node = ReputationNode::new("node-a".to_owned());
+        let mut node = ReputationNode::new("node-a".to_owned());
         node.add_peer("node-reliable".to_owned());
         node.add_peer("node-offline".to_owned());
 
