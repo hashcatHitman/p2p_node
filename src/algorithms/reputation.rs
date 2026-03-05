@@ -370,7 +370,7 @@ mod test {
 
         let ranked = node.get_ranked_peers();
         assert_eq!(ranked[0].node_id, "node-b");
-        assert_eq!(ranked[ranked.len()].node_id, "node-c");
+        assert_eq!(ranked[ranked.len() - 1].node_id, "node-c");
     }
 
     #[test]
