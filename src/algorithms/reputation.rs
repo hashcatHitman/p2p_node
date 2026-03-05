@@ -183,8 +183,10 @@ impl ReputationNode {
     }
 
     /// Recalculate trust scores for all peers.
-    pub fn update_all_scores(&self) {
-        todo!()
+    pub fn update_all_scores(&mut self) {
+        for record in self.peers.values_mut() {
+            record.recalculate_trust();
+        }
     }
 
     /// Compute a reputation-weighted majority vote over reported counts.
