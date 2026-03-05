@@ -388,7 +388,7 @@ mod test {
 
         let (result, confidence) = node.weighted_majority_vote(votes, false);
 
-        assert_eq!(result, 100);
+        assert_eq!(result, Some(100));
         assert!(0.0 < confidence);
         assert!(confidence <= 1.0);
     }
