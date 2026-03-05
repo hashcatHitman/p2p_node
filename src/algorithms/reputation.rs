@@ -190,3 +190,151 @@ impl ReputationNode {
         messages
     }
 }
+
+#[expect(clippy::missing_panics_doc, reason = "tests tend to do that")]
+#[cfg(test)]
+mod test {
+    use std::collections::HashMap;
+
+    use crate::algorithms::reputation::ReputationNode;
+
+    #[test]
+    fn new_peer_neutral_trust() {
+        let node = ReputationNode::new("node-a".to_owned());
+        node.add_peer("node-b".to_owned());
+
+        let ranked = node.get_ranked_peers();
+        assert_eq!(ranked.len(), 1);
+        let score = ranked[0].trust_score;
+        assert!(0.3 <= score);
+        assert!(score <= 0.7);
+    }
+
+    #[test]
+    fn accurate_peer_gains_trust() {
+        let node = ReputationNode::new("node-a".to_owned());
+        node.add_peer("node-b".to_owned());
+
+        for _ in 0..10 {
+            node.record_report("node-b".to_owned(), true);
+        }
+
+        node.update_all_scores();
+
+        let ranked = node.get_ranked_peers();
+        let score = ranked[0].trust_score;
+        assert!(score > 0.5);
+    }
+
+    #[test]
+    fn inaccurate_peer_loses_trust() {
+        let node = ReputationNode::new("node-a".to_owned());
+        node.add_peer("node-b".to_owned());
+
+        for _ in 0..10 {
+            node.record_report("node-b".to_owned(), false);
+        }
+
+        node.update_all_scores();
+
+        let ranked = node.get_ranked_peers();
+        let score = ranked[0].trust_score;
+        assert!(score < 0.5);
+    }
+
+    #[test]
+    fn ranking_order() {
+        let node = ReputationNode::new("node-a".to_owned());
+        node.add_peer("node-b".to_owned());
+        node.add_peer("node-c".to_owned());
+
+        for _ in 0..10 {
+            node.record_report("node-b".to_owned(), true);
+            node.record_report("node-c".to_owned(), false);
+        }
+
+        node.update_all_scores();
+
+        let ranked = node.get_ranked_peers();
+        assert_eq!(ranked[0].node_id, "node-b");
+        assert_eq!(ranked[ranked.len()].node_id, "node-c");
+    }
+
+    #[test]
+    fn weighted_vote_honest_beats_liar() {
+        let node = ReputationNode::new("node-a".to_owned());
+        node.add_peer("node-b".to_owned());
+        node.add_peer("node-c".to_owned());
+
+        for _ in 0..10 {
+            node.record_report("node-b".to_owned(), true);
+            node.record_report("node-c".to_owned(), false);
+        }
+
+        node.update_all_scores();
+
+        let mut votes = HashMap::new();
+        let _: Option<u32> = votes.insert("node-b".to_owned(), 100);
+        let _: Option<u32> = votes.insert("node-c".to_owned(), 9999);
+
+        let (result, confidence) = node.weighted_majority_vote(votes, false);
+
+        assert_eq!(result, 100);
+        assert!(0.0 < confidence);
+        assert!(confidence <= 1.0);
+    }
+
+    #[test]
+    fn confidence_higher_when_unanimous() {
+        let node = ReputationNode::new("node-a".to_owned());
+
+        for peer in ["node-b", "node-c", "node-d"] {
+            node.add_peer(peer.to_owned());
+            node.record_report(peer.to_owned(), true);
+        }
+
+        node.update_all_scores();
+
+        let mut unaninmous_votes = HashMap::new();
+        let _: Option<u32> = unaninmous_votes.insert("node-b".to_owned(), 100);
+        let _: Option<u32> = unaninmous_votes.insert("node-c".to_owned(), 100);
+        let _: Option<u32> = unaninmous_votes.insert("node-d".to_owned(), 100);
+
+        let mut split_votes = HashMap::new();
+        let _: Option<u32> = split_votes.insert("node-b".to_owned(), 100);
+        let _: Option<u32> = split_votes.insert("node-c".to_owned(), 100);
+        let _: Option<u32> = split_votes.insert("node-d".to_owned(), 999);
+
+        let (_, unanimous_confidence) =
+            node.weighted_majority_vote(unaninmous_votes, false);
+
+        let (_, split_confidence) =
+            node.weighted_majority_vote(split_votes, false);
+
+        assert!(unanimous_confidence > split_confidence);
+    }
+
+    #[test]
+    fn heartbeat_uptime_affects_trust() {
+        let node = ReputationNode::new("node-a".to_owned());
+        node.add_peer("node-reliable".to_owned());
+        node.add_peer("node-offline".to_owned());
+
+        for _ in 0..10 {
+            node.record_heartbeat("node-reliable".to_owned(), true);
+            node.record_heartbeat("node-offline".to_owned(), false);
+        }
+
+        node.update_all_scores();
+
+        let ids: Vec<String> = node
+            .get_ranked_peers()
+            .into_iter()
+            .map(|record| record.node_id)
+            .collect();
+
+        let best_id = ids.first().unwrap();
+
+        assert_eq!(best_id, "node-reliable");
+    }
+}
