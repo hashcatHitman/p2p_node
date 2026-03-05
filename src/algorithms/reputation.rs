@@ -267,7 +267,11 @@ impl ReputationNode {
 
     /// Return all peers sorted by trust score, highest first.
     pub fn get_ranked_peers(&self) -> Vec<ReputationRecord> {
-        todo!()
+        let mut peer_ratings: Vec<ReputationRecord> =
+            self.peers.values().cloned().collect();
+        peer_ratings.sort_by_key(|record| TotalCmpF64(record.trust_score()));
+        peer_ratings.reverse();
+        peer_ratings
     }
 
     pub fn flush_log(&mut self) -> Vec<String> {
