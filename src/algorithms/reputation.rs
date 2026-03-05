@@ -22,6 +22,7 @@
 //! Run the Algorithm Labs notebook to see weighted voting in action
 //! before implementing it here.
 
+use core::cmp::Ordering;
 use core::fmt;
 use core::fmt::Display;
 use std::collections::HashMap;
@@ -206,8 +207,62 @@ impl ReputationNode {
         &self,
         votes: HashMap<String, u32>,
         verbose: bool,
-    ) -> (u32, f64) {
-        todo!()
+    ) -> (Option<u32>, f64) {
+        if votes.is_empty() {
+            return (None, 0.0);
+        }
+
+        let mut weighted = HashMap::new();
+        let mut total_weight = 0.0;
+
+        for (peer_id, value) in &votes {
+            let weight = self
+                .peers
+                .get(peer_id)
+                .map_or(0.5_f64, |peer| peer.trust_score);
+
+            match weighted.get_mut(&value) {
+                Some(stored) => *stored += weight,
+                None => {
+                    let _: Option<f64> = weighted.insert(value, weight);
+                }
+            }
+
+            total_weight += weight;
+        }
+
+        let mut weighted: Vec<(u32, TotalCmpF64)> = weighted
+            .into_iter()
+            .map(|(&value, weight)| (value, TotalCmpF64(weight)))
+            .collect();
+
+        if let Some(&(winner, win_weight)) =
+            weighted.iter().max_by_key(|&&(value, weight)| weight)
+        {
+            let confidence = if total_weight > 0.0 {
+                win_weight.0 / total_weight
+            } else {
+                0.0
+            };
+
+            if verbose {
+                println!("  Votes: {votes:?}");
+                print!("  Weights: ");
+                for (peer_id, votes) in &votes {
+                    let weight = self
+                        .peers
+                        .get(peer_id)
+                        .map_or(0.5, |peer| peer.trust_score);
+
+                    print!("{peer_id}={weight:.2}  ");
+                }
+                println!();
+                println!("  Winner: {winner} (confidence: {confidence:.2})");
+            }
+
+            return (Some(winner), confidence);
+        }
+        (None, 0.0)
     }
 
     /// Return all peers sorted by trust score, highest first.
@@ -219,6 +274,29 @@ impl ReputationNode {
         let messages = self.log.clone();
         self.log.clear();
         messages
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
+struct TotalCmpF64(f64);
+
+impl PartialEq for TotalCmpF64 {
+    fn eq(&self, other: &Self) -> bool {
+        self.0.total_cmp(&other.0) == Ordering::Equal
+    }
+}
+
+impl Eq for TotalCmpF64 {}
+
+impl PartialOrd for TotalCmpF64 {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for TotalCmpF64 {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.0.total_cmp(&other.0)
     }
 }
 
