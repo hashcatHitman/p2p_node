@@ -147,8 +147,14 @@ impl ReputationNode {
     }
 
     /// Record whether a peer's VIEW_EVENT report matched the audit majority.
-    pub fn record_report(&self, peer_id: String, was_accurate: bool) {
-        todo!()
+    pub fn record_report(&mut self, peer_id: String, was_accurate: bool) {
+        if let Some(peer) = self.peers.get_mut(&peer_id) {
+            peer.reports_total += 1;
+
+            if was_accurate {
+                peer.reports_accurate += 1;
+            }
+        }
     }
 
     /// Record a heartbeat event (whether the peer responded to a PING).
