@@ -94,8 +94,18 @@ impl ReputationRecord {
     ///
     /// The decay_factor pulls scores back toward 0.5 each round,
     /// preventing permanent entrenchment (good or bad).
-    pub fn recalculate_trust(&self) {
-        todo!()
+    pub fn recalculate_trust(&mut self) {
+        let raw = 0.1_f64.mul_add(
+            self.reciprocity(),
+            0.6_f64.mul_add(self.accuracy(), 0.3_f64 * self.uptime()),
+        );
+
+        let decay_factor = (f64::from(self.reports_total)
+            + f64::from(self.heartbeats_total) / 20.0_f64)
+            .min(1.0_f64);
+
+        self.trust_score =
+            decay_factor.mul_add(raw, (1.0_f64 - decay_factor) * 0.5_f64);
     }
 }
 
