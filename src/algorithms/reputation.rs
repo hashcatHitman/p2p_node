@@ -24,6 +24,7 @@
 
 use core::fmt;
 use core::fmt::Display;
+use std::collections::HashMap;
 
 /// Tracks reputation metrics for a single peer.
 #[derive(Debug, Clone)]
@@ -107,5 +108,85 @@ impl Display for ReputationRecord {
             self.trust_score,
             self.accuracy()
         )
+    }
+}
+
+/// Tracks reputation for all known peers and computes weighted votes.
+#[derive(Debug, Clone)]
+pub struct ReputationNode {
+    node_id: String,
+    peers: HashMap<String, ReputationRecord>,
+    log: Vec<String>,
+}
+
+impl ReputationNode {
+    pub fn new(node_id: String) -> Self {
+        Self {
+            node_id,
+            peers: HashMap::new(),
+            log: Vec::new(),
+        }
+    }
+
+    /// Register a new peer with a neutral trust score (0.5).
+    pub fn add_peer(&self, node_id: String) {
+        todo!()
+    }
+
+    /// Record whether a peer's VIEW_EVENT report matched the audit majority.
+    pub fn record_report(&self, peer_id: String, was_accurate: bool) {
+        todo!()
+    }
+
+    /// Record a heartbeat event (whether the peer responded to a PING).
+    pub fn record_heartbeat(&self, peer_id: String, responded: bool) {
+        todo!()
+    }
+
+    /// Record that a peer contributed `units` of data/messages to us.
+    pub fn record_contribution(&self, peer_id: String, units: u32) {
+        todo!()
+    }
+
+    /// Record that a peer consumed `units` from us.
+    pub fn record_consumption(&self, peer_id: String, units: u32) {
+        todo!()
+    }
+
+    /// Recalculate trust scores for all peers.
+    pub fn update_all_scores(&self) {
+        todo!()
+    }
+
+    /// Compute a reputation-weighted majority vote over reported counts.
+    ///
+    /// Each vote is weighted by that peer's trust score. Group similar
+    /// counts together (votes within 5% are considered the same). The
+    /// group with the highest total weight wins.
+    ///
+    /// Args:
+    ///     votes:   {peer_id: their_reported_count}
+    ///     verbose: Print vote breakdown if True
+    ///
+    /// Returns:
+    ///     (winning_count, confidence) where confidence is the winning
+    ///     group's share of total weighted votes (0.0 to 1.0)
+    pub fn weighted_majority_vote(
+        &self,
+        votes: HashMap<String, u32>,
+        verbose: bool,
+    ) -> (u32, f64) {
+        todo!()
+    }
+
+    /// Return all peers sorted by trust score, highest first.
+    pub fn get_ranked_peers(&self) -> Vec<ReputationRecord> {
+        todo!()
+    }
+
+    pub fn flush_log(&mut self) -> Vec<String> {
+        let messages = self.log.clone();
+        self.log.clear();
+        messages
     }
 }
