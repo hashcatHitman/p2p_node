@@ -139,8 +139,11 @@ impl ReputationNode {
     }
 
     /// Register a new peer with a neutral trust score (0.5).
-    pub fn add_peer(&self, node_id: String) {
-        todo!()
+    pub fn add_peer(&mut self, node_id: String) {
+        drop(
+            self.peers
+                .insert(node_id.clone(), ReputationRecord::new(node_id)),
+        );
     }
 
     /// Record whether a peer's VIEW_EVENT report matched the audit majority.
