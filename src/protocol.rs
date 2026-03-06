@@ -132,3 +132,7 @@ pub fn audit_result(
 pub fn choke(sender: String) -> Map<String, Value> {
     base(MessageKind::Choke, sender)
 }
+
+pub fn unchoke(sender: String) -> Map<String, Value> {
+    base(MessageKind::Unchoke, sender)
+}
