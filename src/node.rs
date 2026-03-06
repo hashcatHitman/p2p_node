@@ -292,8 +292,28 @@ impl P2PNode {
         self.transport.send(node_id, Value::Object(plist));
     }
 
-    pub fn handle_peer_list(&self, message: Map<String, Value>) {
-        todo!()
+    pub fn handle_peer_list(&mut self, message: Map<String, Value>) {
+        let sender_id = message.get("sender").map(ToString::to_string).unwrap();
+        let incoming_lol = message.get("peers").unwrap();
+        let incoming: Vec<Value> = message
+            .get("peers")
+            .map(|f| f.as_array())
+            .unwrap()
+            .unwrap()
+            .clone();
+        self.log(&format!("Got a peer list from: {sender_id}"));
+        let _: u8 = self.gossip.receive_peer_list(incoming, sender_id);
+
+        for (peer, record) in self.gossip.peers() {
+            self.heartbeat.add_peer(peer.clone());
+            self.choking.add_peer(peer.clone(), true);
+            self.reputation.add_peer(peer.clone());
+            drop(
+                self.transport
+                    .queue_url_cache
+                    .insert(peer.clone(), record.queue_url().to_owned()),
+            );
+        }
     }
 
     pub fn handle_ping(&self, message: Map<String, Value>) {
