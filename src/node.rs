@@ -268,8 +268,28 @@ impl P2PNode {
         }
     }
 
-    pub fn handle_hello(&self, message: Map<String, Value>) {
-        todo!()
+    pub fn handle_hello(&mut self, message: Map<String, Value>) {
+        let node_id = message.get("sender").map(ToString::to_string).unwrap();
+        let queue_url =
+            message.get("queue_url").map(ToString::to_string).unwrap();
+        self.log(&format!("Got a hello from: {node_id}"));
+        self.gossip.add_peer(node_id.clone(), queue_url.clone());
+        self.heartbeat.add_peer(node_id.clone());
+        self.choking.add_peer(node_id.clone(), true);
+        self.reputation.add_peer(node_id.clone());
+
+        drop(
+            self.transport
+                .queue_url_cache
+                .insert(node_id.clone(), queue_url),
+        );
+
+        let plist = protocol::peer_list(
+            self.node_id.clone(),
+            self.gossip.get_peer_list_message(),
+        );
+
+        self.transport.send(node_id, Value::Object(plist));
     }
 
     pub fn handle_peer_list(&self, message: Map<String, Value>) {
