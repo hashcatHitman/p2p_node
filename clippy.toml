@@ -2,7 +2,29 @@
 #
 # SPDX-License-Identifier: Apache-2.0 OR MIT
 
-allowed-duplicate-crates = ["hashbrown"]
+allowed-duplicate-crates = [
+    "hashbrown",
+    "cpufeatures",
+    "h2",
+    "http",
+    "http-body",
+    "hyper",
+    "hyper-rustls",
+    "rustls",
+    "rustls-webpki",
+    "socket2",
+    "tokio-rustls",
+    "windows-sys",
+    "windows-targets",
+    "windows_aarch64_gnullvm",
+    "windows_aarch64_msvc",
+    "windows_i686_gnu",
+    "windows_i686_gnullvm",
+    "windows_i686_msvc",
+    "windows_x86_64_gnu",
+    "windows_x86_64_gnullvm",
+    "windows_x86_64_msvc",
+]
 allow-dbg-in-tests = true
 allow-expect-in-tests = true
 allow-indexing-slicing-in-tests = true
