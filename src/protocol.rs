@@ -6,7 +6,7 @@ use core::fmt;
 use core::fmt::Display;
 use core::str::FromStr;
 
-use serde_json::{Map, Value};
+use serde_json::{Map, Value, json};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum MessageKind {
@@ -74,5 +74,12 @@ pub fn base(kind: MessageKind, sender: String) -> Map<String, Value> {
 pub fn hello(sender: String, queue_url: String) -> Map<String, Value> {
     let mut message = base(MessageKind::Hello, sender);
     drop(message.insert("queue_url".to_owned(), Value::String(queue_url)));
+    message
+}
+
+pub fn peer_list(sender: String, peers: Vec<Value>) -> Map<String, Value> {
+    let mut message = base(MessageKind::PeerList, sender);
+
+    drop(message.insert("peers".to_owned(), json!(peers)));
     message
 }
