@@ -9,6 +9,7 @@
 //!   run() polls SQS every few seconds, calls handle_message() for each
 //!   received message, then calls run_periodic_tasks() for timers.
 
+use core::str::FromStr as _;
 use std::collections::HashMap;
 use std::fs::File;
 use std::{io, time};
@@ -20,7 +21,7 @@ use crate::algorithms::choking::ChokingNode;
 use crate::algorithms::gossip::GossipNode;
 use crate::algorithms::heartbeat::HeartbeatNode;
 use crate::algorithms::reputation::ReputationNode;
-use crate::protocol;
+use crate::protocol::{self, MessageKind};
 
 #[derive(Debug, Clone)]
 pub struct SqsTransport {
@@ -241,8 +242,30 @@ impl P2PNode {
         }
     }
 
-    pub fn handle_message(&self, message: Map<String, Value>) {
-        todo!()
+    pub fn handle_message(&mut self, message: Map<String, Value>) {
+        let node_id = message.get("sender").map(ToString::to_string).unwrap();
+        let message_type =
+            message.get("type").map(ToString::to_string).unwrap();
+        if node_id == self.node_id {
+            return;
+        }
+        self.messages_received += 1;
+
+        match MessageKind::from_str(&message_type) {
+            Ok(kind) => match kind {
+                MessageKind::Hello => self.handle_hello(message),
+                MessageKind::PeerList => self.handle_peer_list(message),
+                MessageKind::Ping => self.handle_ping(message),
+                MessageKind::Pong => self.handle_pong(message),
+                MessageKind::ViewEvent => self.handle_view_event(message),
+                MessageKind::AuditResult => self.handle_audit_result(message),
+                MessageKind::Choke => self.handle_choke(message),
+                MessageKind::Unchoke => self.handle_unchoke(message),
+            },
+            Err(()) => {
+                self.log(&format!("Unknown message type: {message_type}"));
+            }
+        }
     }
 
     pub fn handle_hello(&self, message: Map<String, Value>) {
