@@ -419,8 +419,11 @@ impl P2PNode {
         }
     }
 
-    pub fn do_choking(&self) {
-        todo!()
+    pub fn do_choking(&mut self) {
+        self.choking.run_choking_round();
+        for log in self.choking.flush_log() {
+            self.log(&log);
+        }
     }
 
     pub fn do_reputation(&self) {
