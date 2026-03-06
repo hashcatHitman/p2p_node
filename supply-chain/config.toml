@@ -99,6 +99,10 @@ criteria = "safe-to-deploy"
 version = "1.13.1"
 criteria = "safe-to-deploy"
 
+[[exemptions.portable-atomic-util]]
+version = "0.2.5"
+criteria = "safe-to-deploy"
+
 [[exemptions.prettyplease]]
 version = "0.2.37"
 criteria = "safe-to-deploy"
