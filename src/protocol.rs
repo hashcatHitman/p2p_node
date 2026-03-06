@@ -90,3 +90,10 @@ pub fn ping(sender: String, sequence: u16) -> Map<String, Value> {
     drop(message.insert("seq".to_owned(), json!(sequence)));
     message
 }
+
+pub fn pong(sender: String, sequence: u16) -> Map<String, Value> {
+    let mut message = base(MessageKind::Pong, sender);
+
+    drop(message.insert("seq".to_owned(), json!(sequence)));
+    message
+}
