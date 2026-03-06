@@ -20,6 +20,7 @@ use crate::algorithms::choking::ChokingNode;
 use crate::algorithms::gossip::GossipNode;
 use crate::algorithms::heartbeat::HeartbeatNode;
 use crate::algorithms::reputation::ReputationNode;
+use crate::protocol;
 
 #[derive(Debug, Clone)]
 pub struct SqsTransport {
@@ -220,8 +221,24 @@ impl P2PNode {
         this
     }
 
-    pub fn bootstrap(&self, bootstrap_nodes: Option<Vec<String>>) {
-        todo!()
+    pub async fn bootstrap(&mut self, bootstrap_nodes: Option<Vec<String>>) {
+        let bootstrap_nodes = bootstrap_nodes.unwrap_or_else(|| {
+            vec![
+                "bot-alpha".to_owned(),
+                "bot-bravo".to_owned(),
+                "bot-charlie".to_owned(),
+            ]
+        });
+        self.log(&format!("Bootstrapping via {bootstrap_nodes:?}..."));
+
+        let hi = protocol::hello(
+            self.node_id.clone(),
+            self.queue_url.clone().unwrap_or_default(),
+        );
+        for node in bootstrap_nodes {
+            let _: bool =
+                self.transport.send(node, Value::Object(hi.clone())).await;
+        }
     }
 
     pub fn handle_message(&self, message: Map<String, Value>) {
