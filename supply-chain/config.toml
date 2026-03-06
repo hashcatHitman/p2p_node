@@ -179,6 +179,10 @@ criteria = "safe-to-deploy"
 version = "0.244.0"
 criteria = "safe-to-deploy"
 
+[[exemptions.windows-link]]
+version = "0.2.1"
+criteria = "safe-to-deploy"
+
 [[exemptions.wit-bindgen]]
 version = "0.51.0"
 criteria = "safe-to-deploy"
