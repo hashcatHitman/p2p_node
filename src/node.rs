@@ -37,12 +37,11 @@ impl SqsTransport {
 
     pub fn load_resources(&mut self, disk_cache: File) -> bool {
         let disk_cache = io::BufReader::new(disk_cache);
-        let cache: Result<serde_json::Value, _> =
-            serde_json::from_reader(disk_cache);
+        let cache: Result<Value, _> = serde_json::from_reader(disk_cache);
         let cache: Option<HashMap<String, String>> = cache
-            .map(|cache: serde_json::Value| {
+            .map(|cache: Value| {
                 let cache = cache.as_object()?;
-                cache.get("queues").and_then(|cache: &serde_json::Value| {
+                cache.get("queues").and_then(|cache: &Value| {
                     serde_json::from_value(cache.clone()).ok()
                 })
             })
@@ -78,7 +77,7 @@ impl SqsTransport {
     pub async fn send(
         &mut self,
         target_node_id: String,
-        message: serde_json::Value,
+        message: Value,
     ) -> bool {
         if let Some(url) = self.get_queue_url(target_node_id.clone()).await {
             match self
@@ -104,7 +103,7 @@ impl SqsTransport {
         node_id: String,
         max_messages: i32,
         wait_seconds: i32,
-    ) -> Vec<Map<String, serde_json::Value>> {
+    ) -> Vec<Map<String, Value>> {
         let mut messages = Vec::new();
         if let Some(url) = self.get_queue_url(node_id.clone()).await {
             match self
@@ -121,14 +120,14 @@ impl SqsTransport {
                         for sqs_msg in msg_vec {
                             if let Some(body) = sqs_msg.body()
                                 && let Ok(mut deserialized) =
-                                    serde_json::from_str::<
-                                        Map<String, serde_json::Value>,
-                                    >(body)
+                                    serde_json::from_str::<Map<String, Value>>(
+                                        body,
+                                    )
                                 && let Some(handle) = sqs_msg.receipt_handle
                             {
                                 drop(deserialized.insert(
                                     "_receipt_handle".to_owned(),
-                                    serde_json::Value::String(handle),
+                                    Value::String(handle),
                                 ));
 
                                 messages.push(deserialized);
