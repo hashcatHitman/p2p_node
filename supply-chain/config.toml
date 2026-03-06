@@ -199,6 +199,10 @@ criteria = "safe-to-deploy"
 version = "0.2.114"
 criteria = "safe-to-deploy"
 
+[[exemptions.wasm-bindgen-macro-support]]
+version = "0.2.114"
+criteria = "safe-to-deploy"
+
 [[exemptions.wasm-encoder]]
 version = "0.244.0"
 criteria = "safe-to-deploy"
