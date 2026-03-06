@@ -21,6 +21,7 @@ publish = false
 jiff = "0.2.23"
 rand = "0.10.0"
 serde_json = "1.0.149"
+uuid = { version = "1.22.0", features = ["v4"] }
 
 [profile.release]
 codegen-units = 1
