@@ -86,6 +86,10 @@ impl GossipNode {
         }
     }
 
+    pub fn peers(&self) -> &HashMap<String, PeerEntry> {
+        &self.peers
+    }
+
     /// Manually add or refresh a peer (bootstrap / initial knowledge).
     ///
     /// Called when:
