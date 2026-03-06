@@ -53,6 +53,10 @@ impl PeerEntry {
         }
     }
 
+    pub fn queue_url(&self) -> &str {
+        &self.queue_url
+    }
+
     const fn is_expired(&self) -> bool {
         self.time_to_live <= 0
     }
