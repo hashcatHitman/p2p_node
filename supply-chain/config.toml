@@ -179,6 +179,10 @@ criteria = "safe-to-deploy"
 version = "0.2.6"
 criteria = "safe-to-deploy"
 
+[[exemptions.uuid]]
+version = "1.22.0"
+criteria = "safe-to-deploy"
+
 [[exemptions.wasip2]]
 version = "1.0.2+wasi-0.2.9"
 criteria = "safe-to-deploy"
