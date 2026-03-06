@@ -10,6 +10,9 @@ url = "https://raw.githubusercontent.com/google/supply-chain/main/audits.toml"
 [imports.hashcatHitman]
 url = "https://raw.githubusercontent.com/hashcatHitman/supply-chain/main/audits.toml"
 
+[imports.mozilla]
+url = "https://raw.githubusercontent.com/mozilla/supply-chain/main/audits.toml"
+
 [[exemptions.anyhow]]
 version = "1.0.102"
 criteria = "safe-to-deploy"
@@ -164,10 +167,6 @@ criteria = "safe-to-deploy"
 
 [[exemptions.unicode-ident]]
 version = "1.0.24"
-criteria = "safe-to-deploy"
-
-[[exemptions.unicode-xid]]
-version = "0.2.6"
 criteria = "safe-to-deploy"
 
 [[exemptions.uuid]]
