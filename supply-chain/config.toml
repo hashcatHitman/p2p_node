@@ -191,6 +191,10 @@ criteria = "safe-to-deploy"
 version = "0.4.0+wasi-0.3.0-rc-2026-01-06"
 criteria = "safe-to-deploy"
 
+[[exemptions.wasm-bindgen]]
+version = "0.2.114"
+criteria = "safe-to-deploy"
+
 [[exemptions.wasm-encoder]]
 version = "0.244.0"
 criteria = "safe-to-deploy"
