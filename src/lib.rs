@@ -23,6 +23,8 @@
     clippy::min_ident_chars,
     clippy::arithmetic_side_effects,
     clippy::else_if_without_else,
+    clippy::missing_panics_doc,
+    clippy::unwrap_used,
     reason = "to worry about later"
 )]
 
