@@ -6,6 +6,8 @@ use core::fmt;
 use core::fmt::Display;
 use core::str::FromStr;
 
+use serde_json::{Map, Value};
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum MessageKind {
     Hello,
@@ -51,4 +53,20 @@ impl FromStr for MessageKind {
         };
         Ok(ok)
     }
+}
+
+pub fn base(kind: MessageKind, sender: String) -> Map<String, Value> {
+    let mut message = Map::new();
+    let timestamp = jiff::Timestamp::now()
+        .in_tz("UTC")
+        .unwrap()
+        .timestamp()
+        .to_string();
+    let message_id = uuid::Uuid::new_v4().to_string();
+    drop(message.insert("type".to_owned(), Value::String(kind.to_string())));
+    drop(message.insert("sender".to_owned(), Value::String(sender)));
+    drop(message.insert("timestamp".to_owned(), Value::String(timestamp)));
+    drop(message.insert("msg_id".to_owned(), Value::String(message_id)));
+
+    message
 }
