@@ -97,3 +97,18 @@ pub fn pong(sender: String, sequence: u16) -> Map<String, Value> {
     drop(message.insert("seq".to_owned(), json!(sequence)));
     message
 }
+
+pub fn view_event(
+    sender: String,
+    event_id: String,
+    content_id: String,
+    count: u32,
+    ad_id: String,
+) -> Map<String, Value> {
+    let mut message = base(MessageKind::ViewEvent, sender);
+    drop(message.insert("event_id".to_owned(), Value::String(event_id)));
+    drop(message.insert("content_id".to_owned(), Value::String(content_id)));
+    drop(message.insert("count".to_owned(), json!(count)));
+    drop(message.insert("ad_id".to_owned(), Value::String(ad_id)));
+    message
+}
