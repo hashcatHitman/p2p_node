@@ -143,6 +143,10 @@ criteria = "safe-to-deploy"
 version = "0.10.0"
 criteria = "safe-to-deploy"
 
+[[exemptions.rustversion]]
+version = "1.0.22"
+criteria = "safe-to-deploy"
+
 [[exemptions.semver]]
 version = "1.0.27"
 criteria = "safe-to-deploy"
