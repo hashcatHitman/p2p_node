@@ -90,7 +90,7 @@ impl GossipNode {
         }
     }
 
-    pub fn peers(&self) -> &HashMap<String, PeerEntry> {
+    pub const fn peers(&self) -> &HashMap<String, PeerEntry> {
         &self.peers
     }
 
