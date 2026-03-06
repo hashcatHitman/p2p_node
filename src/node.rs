@@ -334,8 +334,19 @@ impl P2PNode {
         self.reputation.record_contribution(node_id, 1);
     }
 
-    pub fn handle_pong(&self, message: Map<String, Value>) {
-        todo!()
+    pub fn handle_pong(&mut self, message: Map<String, Value>) {
+        let node_id = message.get("sender").map(ToString::to_string).unwrap();
+        #[expect(
+            clippy::cast_possible_truncation,
+            reason = "I have yet to find any good reason for this to even be
+            bigger than a u8. We need a better spec."
+        )]
+        let seq: u16 =
+            message.get("seq").map(|s| s.as_u64().unwrap()).unwrap() as u16;
+        self.log(&format!("Got a pong from: {node_id} (#{seq})"));
+
+        self.heartbeat.receive_pong(node_id.clone(), seq.into());
+        self.reputation.record_heartbeat(node_id, true);
     }
 
     pub fn handle_view_event(&self, message: Map<String, Value>) {
