@@ -83,3 +83,10 @@ pub fn peer_list(sender: String, peers: Vec<Value>) -> Map<String, Value> {
     drop(message.insert("peers".to_owned(), json!(peers)));
     message
 }
+
+pub fn ping(sender: String, sequence: u16) -> Map<String, Value> {
+    let mut message = base(MessageKind::Ping, sender);
+
+    drop(message.insert("seq".to_owned(), json!(sequence)));
+    message
+}
