@@ -316,8 +316,22 @@ impl P2PNode {
         }
     }
 
-    pub fn handle_ping(&self, message: Map<String, Value>) {
-        todo!()
+    pub fn handle_ping(&mut self, message: Map<String, Value>) {
+        let node_id = message.get("sender").map(ToString::to_string).unwrap();
+        #[expect(
+            clippy::cast_possible_truncation,
+            reason = "I have yet to find any good reason for this to even be
+            bigger than a u8. We need a better spec."
+        )]
+        let seq =
+            message.get("seq").map(|s| s.as_u64().unwrap()).unwrap() as u16;
+        self.log(&format!("Got a ping from: {node_id} (#{seq})"));
+
+        let response = protocol::pong(node_id.clone(), seq);
+        self.transport
+            .send(node_id.clone(), Value::Object(response));
+        self.choking.record_contribution(node_id.clone(), 1);
+        self.reputation.record_contribution(node_id, 1);
     }
 
     pub fn handle_pong(&self, message: Map<String, Value>) {
