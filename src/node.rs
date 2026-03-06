@@ -11,10 +11,15 @@
 
 use std::collections::HashMap;
 use std::fs::File;
-use std::io;
+use std::{io, time};
 
 use aws_sdk_sqs::Client;
-use serde_json::Map;
+use serde_json::{Map, Value};
+
+use crate::algorithms::choking::ChokingNode;
+use crate::algorithms::gossip::GossipNode;
+use crate::algorithms::heartbeat::HeartbeatNode;
+use crate::algorithms::reputation::ReputationNode;
 
 #[derive(Debug, Clone)]
 pub struct SqsTransport {
@@ -148,5 +153,147 @@ impl SqsTransport {
                 .send()
                 .await;
         }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct P2PNode {
+    node_id: String,
+    verbose: bool,
+    running: bool,
+    transport: SqsTransport,
+    queue_url: Option<String>,
+    gossip: GossipNode,
+    heartbeat: HeartbeatNode,
+    choking: ChokingNode,
+    reputation: ReputationNode,
+    gossip_interval: u16,
+    heartbeat_interval: u16,
+    choking_interval: u16,
+    reputation_interval: u16,
+    last_gossip: time::Instant,
+    last_heartbeat: time::Instant,
+    last_choking: time::Instant,
+    last_reputation: time::Instant,
+    ping_seq: u16,
+    messages_received: u32,
+    messages_sent: u32,
+    rounds: u32,
+}
+
+impl P2PNode {
+    pub async fn new(node_id: String, verbose: bool, sqs: Client) -> Self {
+        let mut transport = SqsTransport::new(sqs);
+        let disk_cache = File::open("resources.json").unwrap();
+        let _: bool = transport.load_resources(disk_cache);
+        let queue_url = transport.get_queue_url(node_id.clone()).await;
+
+        let this = Self {
+            node_id: node_id.clone(),
+            verbose,
+            running: false,
+            transport,
+            queue_url: queue_url.clone(),
+            gossip: GossipNode::new(
+                node_id.clone(),
+                queue_url.unwrap_or(String::new()),
+            ),
+            heartbeat: HeartbeatNode::new(node_id.clone(), 3, 2),
+            choking: ChokingNode::new(node_id.clone(), 4, 3),
+            reputation: ReputationNode::new(node_id),
+            gossip_interval: 15,
+            heartbeat_interval: 10,
+            choking_interval: 30,
+            reputation_interval: 30,
+            last_gossip: time::Instant::now(),
+            last_heartbeat: time::Instant::now(),
+            last_choking: time::Instant::now(),
+            last_reputation: time::Instant::now(),
+            ping_seq: 0,
+            messages_received: 0,
+            messages_sent: 0,
+            rounds: 0,
+        };
+        this.log(&format!(
+            "Initialized. Queue: {}",
+            this.queue_url.clone().unwrap_or_default()
+        ));
+        this
+    }
+
+    pub fn bootstrap(&self, bootstrap_nodes: Option<Vec<String>>) {
+        todo!()
+    }
+
+    pub fn handle_message(&self, message: Map<String, Value>) {
+        todo!()
+    }
+
+    pub fn handle_hello(&self, message: Map<String, Value>) {
+        todo!()
+    }
+
+    pub fn handle_peer_list(&self, message: Map<String, Value>) {
+        todo!()
+    }
+
+    pub fn handle_ping(&self, message: Map<String, Value>) {
+        todo!()
+    }
+
+    pub fn handle_pong(&self, message: Map<String, Value>) {
+        todo!()
+    }
+
+    pub fn handle_view_event(&self, message: Map<String, Value>) {
+        todo!()
+    }
+
+    pub fn handle_audit_result(&self, message: Map<String, Value>) {
+        todo!()
+    }
+
+    pub fn handle_choke(&self, message: Map<String, Value>) {
+        todo!()
+    }
+
+    pub fn handle_unchoke(&self, message: Map<String, Value>) {
+        todo!()
+    }
+
+    pub fn run_periodic_tasks(&self) {
+        todo!()
+    }
+
+    pub fn do_gossip(&self) {
+        todo!()
+    }
+
+    pub fn do_heartbeat(&self) {
+        todo!()
+    }
+
+    pub fn do_choking(&self) {
+        todo!()
+    }
+
+    pub fn do_reputation(&self) {
+        todo!()
+    }
+
+    pub fn run(&self) {
+        todo!()
+    }
+
+    pub fn shutdown(&self) {
+        todo!()
+    }
+
+    pub fn print_status(&self) {
+        todo!()
+    }
+
+    pub fn log(&self, message: &str) {
+        todo!()
     }
 }
