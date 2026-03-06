@@ -4,6 +4,9 @@
 [cargo-vet]
 version = "0.10"
 
+[imports.google]
+url = "https://raw.githubusercontent.com/google/supply-chain/main/audits.toml"
+
 [imports.hashcatHitman]
 url = "https://raw.githubusercontent.com/hashcatHitman/supply-chain/main/audits.toml"
 
@@ -29,14 +32,6 @@ criteria = "safe-to-deploy"
 
 [[exemptions.cpufeatures]]
 version = "0.3.0"
-criteria = "safe-to-deploy"
-
-[[exemptions.equivalent]]
-version = "1.0.2"
-criteria = "safe-to-deploy"
-
-[[exemptions.foldhash]]
-version = "0.1.5"
 criteria = "safe-to-deploy"
 
 [[exemptions.getrandom]]
@@ -121,10 +116,6 @@ criteria = "safe-to-deploy"
 
 [[exemptions.proc-macro2]]
 version = "1.0.106"
-criteria = "safe-to-deploy"
-
-[[exemptions.quote]]
-version = "1.0.44"
 criteria = "safe-to-deploy"
 
 [[exemptions.quote]]
