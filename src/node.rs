@@ -426,8 +426,9 @@ impl P2PNode {
         }
     }
 
-    pub fn do_reputation(&self) {
-        todo!()
+    pub fn do_reputation(&mut self) {
+        self.reputation.update_all_scores();
+        self.log("Updated scores");
     }
 
     pub fn run(&self) {
