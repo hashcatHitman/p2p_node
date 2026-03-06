@@ -70,3 +70,9 @@ pub fn base(kind: MessageKind, sender: String) -> Map<String, Value> {
 
     message
 }
+
+pub fn hello(sender: String, queue_url: String) -> Map<String, Value> {
+    let mut message = base(MessageKind::Hello, sender);
+    drop(message.insert("queue_url".to_owned(), Value::String(queue_url)));
+    message
+}
