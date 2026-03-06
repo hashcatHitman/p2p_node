@@ -99,10 +99,12 @@ impl ChokingNode {
 
     /// Register a new peer. New peers start choked.
     pub fn add_peer(&mut self, node_id: String, interested: bool) {
-        drop(
-            self.peers
-                .insert(node_id.clone(), PeerTracker::new(node_id)),
-        );
+        if !self.peers.contains_key(&node_id) {
+            drop(
+                self.peers
+                    .insert(node_id.clone(), PeerTracker::new(node_id)),
+            );
+        }
     }
 
     /// Record that a peer contributed `units` to us.
