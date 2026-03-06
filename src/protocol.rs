@@ -112,3 +112,19 @@ pub fn view_event(
     drop(message.insert("ad_id".to_owned(), Value::String(ad_id)));
     message
 }
+
+pub fn audit_result(
+    sender: String,
+    content_id: String,
+    agreed_count: u32,
+    confidence: f64,
+    voters: Option<Vec<String>>,
+) -> Map<String, Value> {
+    let mut message = base(MessageKind::AuditResult, sender);
+    drop(message.insert("content_id".to_owned(), Value::String(content_id)));
+    drop(message.insert("agreed_count".to_owned(), json!(agreed_count)));
+    drop(message.insert("confidence".to_owned(), json!(confidence)));
+    let voters = voters.unwrap_or_default();
+    drop(message.insert("voters".to_owned(), json!(voters)));
+    message
+}
