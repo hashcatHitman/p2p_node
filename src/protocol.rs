@@ -128,3 +128,7 @@ pub fn audit_result(
     drop(message.insert("voters".to_owned(), json!(voters)));
     message
 }
+
+pub fn choke(sender: String) -> Map<String, Value> {
+    base(MessageKind::Choke, sender)
+}
