@@ -2,6 +2,19 @@
 //
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 
+//! P2P Message Protocol
+//! ====================
+//!
+//! Builders and parsers for the 8 P2P message types.
+//! All messages are JSON dicts sent as SQS message bodies.
+//!
+//! Every message has:
+//!   - type:      one of MESSAGE_TYPES
+//!   - sender:    node_id of the sender
+//!   - timestamp: ISO 8601 UTC timestamp
+//!
+//! Type-specific fields are documented on each builder function.
+
 use core::fmt;
 use core::fmt::Display;
 use core::str::FromStr;
