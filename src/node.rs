@@ -406,8 +406,17 @@ impl P2PNode {
         }
     }
 
-    pub fn do_heartbeat(&self) {
-        todo!()
+    pub fn do_heartbeat(&mut self) {
+        self.ping_seq += 1;
+        let ping = protocol::ping(self.node_id.clone(), self.ping_seq);
+        for peer in self.heartbeat.send_pings(self.rounds) {
+            self.transport
+                .send(peer.clone(), Value::Object(ping.clone()));
+            self.log(&format!(
+                "Sent heartbeat to: {peer} (#{})",
+                self.ping_seq
+            ));
+        }
     }
 
     pub fn do_choking(&self) {
