@@ -18,6 +18,7 @@ categories = ["command-line-utilities"]
 publish = false
 
 [dependencies]
+aws-config = { version = "1.8.15", features = ["behavior-version-latest"] }
 aws-sdk-sqs = "1.96.0"
 jiff = "0.2.23"
 rand = "0.10.0"
