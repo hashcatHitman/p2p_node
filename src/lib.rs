@@ -27,6 +27,7 @@
 )]
 
 pub mod algorithms;
+pub mod protocol;
 
 /// This isn't a real project.
 ///
