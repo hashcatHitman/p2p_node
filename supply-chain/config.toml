@@ -63,6 +63,10 @@ criteria = "safe-to-deploy"
 version = "1.0.17"
 criteria = "safe-to-deploy"
 
+[[exemptions.jiff]]
+version = "0.2.23"
+criteria = "safe-to-deploy"
+
 [[exemptions.leb128fmt]]
 version = "0.1.0"
 criteria = "safe-to-deploy"
