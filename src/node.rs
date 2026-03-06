@@ -365,8 +365,36 @@ impl P2PNode {
         todo!()
     }
 
-    pub fn run_periodic_tasks(&self) {
-        todo!()
+    pub fn run_periodic_tasks(&mut self) {
+        let now = time::Instant::now();
+
+        if now - self.last_gossip
+            >= time::Duration::from_secs(self.gossip_interval.into())
+        {
+            self.do_gossip();
+            self.last_gossip = now;
+        }
+
+        if now - self.last_heartbeat
+            >= time::Duration::from_secs(self.heartbeat_interval.into())
+        {
+            self.do_heartbeat();
+            self.last_heartbeat = now;
+        }
+
+        if now - self.last_choking
+            >= time::Duration::from_secs(self.choking_interval.into())
+        {
+            self.do_choking();
+            self.last_choking = now;
+        }
+
+        if now - self.last_reputation
+            >= time::Duration::from_secs(self.reputation_interval.into())
+        {
+            self.do_reputation();
+            self.last_reputation = now;
+        }
     }
 
     pub fn do_gossip(&self) {
