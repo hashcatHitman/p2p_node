@@ -150,8 +150,8 @@ impl ReputationNode {
     }
 
     /// Record whether a peer's VIEW_EVENT report matched the audit majority.
-    pub fn record_report(&mut self, peer_id: String, was_accurate: bool) {
-        if let Some(peer) = self.peers.get_mut(&peer_id) {
+    pub fn record_report(&mut self, peer_id: &str, was_accurate: bool) {
+        if let Some(peer) = self.peers.get_mut(peer_id) {
             peer.reports_total += 1;
 
             if was_accurate {
@@ -331,7 +331,7 @@ mod test {
         node.add_peer("node-b".to_owned());
 
         for _ in 0..10 {
-            node.record_report("node-b".to_owned(), true);
+            node.record_report("node-b", true);
         }
 
         node.update_all_scores();
@@ -347,7 +347,7 @@ mod test {
         node.add_peer("node-b".to_owned());
 
         for _ in 0..10 {
-            node.record_report("node-b".to_owned(), false);
+            node.record_report("node-b", false);
         }
 
         node.update_all_scores();
@@ -364,8 +364,8 @@ mod test {
         node.add_peer("node-c".to_owned());
 
         for _ in 0..10 {
-            node.record_report("node-b".to_owned(), true);
-            node.record_report("node-c".to_owned(), false);
+            node.record_report("node-b", true);
+            node.record_report("node-c", false);
         }
 
         node.update_all_scores();
@@ -382,8 +382,8 @@ mod test {
         node.add_peer("node-c".to_owned());
 
         for _ in 0..10 {
-            node.record_report("node-b".to_owned(), true);
-            node.record_report("node-c".to_owned(), false);
+            node.record_report("node-b", true);
+            node.record_report("node-c", false);
         }
 
         node.update_all_scores();
@@ -405,7 +405,7 @@ mod test {
 
         for peer in ["node-b", "node-c", "node-d"] {
             node.add_peer(peer.to_owned());
-            node.record_report(peer.to_owned(), true);
+            node.record_report(peer, true);
         }
 
         node.update_all_scores();
