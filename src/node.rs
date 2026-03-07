@@ -431,8 +431,31 @@ impl P2PNode {
         self.log("Updated scores");
     }
 
-    pub fn run(&self) {
-        todo!()
+    pub async fn run(&mut self) {
+        self.running = true;
+        self.log("Starting main loop...");
+        println!("\n[{}] Node running. Press Ctrl+C to stop.", self.node_id);
+
+        while self.running {
+            self.rounds += 1;
+            self.log(&format!("Round {} starts", self.rounds));
+            let messages =
+                self.transport.receive(self.node_id.clone(), 10, 5).await;
+
+            for message in messages {
+                let receipt =
+                    message.get("_receipt_handle").map(ToString::to_string);
+                self.handle_message(message);
+                if let Some(receipt) = receipt {
+                    self.transport.delete(self.node_id.clone(), receipt);
+                }
+            }
+
+            self.run_periodic_tasks();
+            self.gossip.age_entries();
+        }
+
+        self.log("Main loop exited.");
     }
 
     pub fn shutdown(&self) {
