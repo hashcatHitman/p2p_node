@@ -350,19 +350,19 @@ impl P2PNode {
     }
 
     pub fn handle_view_event(&self, message: Map<String, Value>) {
-        // todo!()
+        self.log("todo!: handle_view_event");
     }
 
     pub fn handle_audit_result(&self, message: Map<String, Value>) {
-        // todo!()
+        self.log("todo!: handle_audit_result");
     }
 
     pub fn handle_choke(&self, message: Map<String, Value>) {
-        // todo!()
+        self.log("todo!: handle_choke");
     }
 
     pub fn handle_unchoke(&self, message: Map<String, Value>) {
-        // todo!()
+        self.log("todo!: handle_unchoke");
     }
 
     pub fn run_periodic_tasks(&mut self) {
@@ -464,7 +464,7 @@ impl P2PNode {
     }
 
     pub fn print_status(&self) {
-        todo!()
+        self.log("todo!: print_status");
     }
 
     pub fn log(&self, message: &str) {
