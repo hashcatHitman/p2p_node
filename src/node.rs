@@ -260,7 +260,7 @@ impl P2PNode {
                 MessageKind::ViewEvent => self.handle_view_event(&message),
                 MessageKind::AuditResult => self.handle_audit_result(&message),
                 MessageKind::Choke => self.handle_choke(&message),
-                MessageKind::Unchoke => self.handle_unchoke(message),
+                MessageKind::Unchoke => self.handle_unchoke(&message),
             },
             Err(()) => {
                 self.log(&format!("Unknown message type: {message_type}"));
@@ -361,7 +361,7 @@ impl P2PNode {
         self.log("todo!: handle_choke");
     }
 
-    pub fn handle_unchoke(&self, message: Map<String, Value>) {
+    pub fn handle_unchoke(&self, message: &Map<String, Value>) {
         self.log("todo!: handle_unchoke");
     }
 
