@@ -253,7 +253,7 @@ impl P2PNode {
 
         match MessageKind::from_str(&message_type) {
             Ok(kind) => match kind {
-                MessageKind::Hello => self.handle_hello(message),
+                MessageKind::Hello => self.handle_hello(&message),
                 MessageKind::PeerList => self.handle_peer_list(message),
                 MessageKind::Ping => self.handle_ping(message),
                 MessageKind::Pong => self.handle_pong(message),
@@ -268,7 +268,7 @@ impl P2PNode {
         }
     }
 
-    pub fn handle_hello(&mut self, message: Map<String, Value>) {
+    pub fn handle_hello(&mut self, message: &Map<String, Value>) {
         let node_id = message.get("sender").map(ToString::to_string).unwrap();
         let queue_url =
             message.get("queue_url").map(ToString::to_string).unwrap();
