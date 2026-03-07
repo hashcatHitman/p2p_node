@@ -251,6 +251,10 @@ impl P2PNode {
         }
         self.messages_received += 1;
 
+        if let Some(sender) = self.gossip.peers_mut().get_mut(&node_id) {
+            *sender.time_to_live_mut() = 5;
+        }
+
         match MessageKind::from_str(&message_type) {
             Ok(kind) => match kind {
                 MessageKind::Hello => self.handle_hello(message),
