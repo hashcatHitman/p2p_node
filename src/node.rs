@@ -331,7 +331,7 @@ impl P2PNode {
         self.transport
             .send(node_id.clone(), Value::Object(response));
         self.choking.record_contribution(&node_id, 1);
-        self.reputation.record_contribution(node_id, 1);
+        self.reputation.record_contribution(&node_id, 1);
     }
 
     pub fn handle_pong(&mut self, message: Map<String, Value>) {

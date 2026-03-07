@@ -172,8 +172,8 @@ impl ReputationNode {
     }
 
     /// Record that a peer contributed `units` of data/messages to us.
-    pub fn record_contribution(&mut self, peer_id: String, units: u32) {
-        if let Some(peer) = self.peers.get_mut(&peer_id) {
+    pub fn record_contribution(&mut self, peer_id: &str, units: u32) {
+        if let Some(peer) = self.peers.get_mut(peer_id) {
             peer.contributions += 1;
         }
     }
