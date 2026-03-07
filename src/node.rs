@@ -458,8 +458,9 @@ impl P2PNode {
         self.log("Main loop exited.");
     }
 
-    pub fn shutdown(&self) {
-        todo!()
+    pub fn shutdown(&mut self) {
+        self.log("Shutting down...");
+        self.running = false;
     }
 
     pub fn print_status(&self) {
