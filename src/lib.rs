@@ -17,7 +17,6 @@
 #![expect(
     clippy::module_name_repetitions,
     unused,
-    clippy::needless_pass_by_value,
     clippy::use_debug,
     clippy::iter_over_hash_type,
     clippy::min_ident_chars,
