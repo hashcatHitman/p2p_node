@@ -7,3 +7,4 @@
 /.venv
 /rust-toolchain.toml
 aws.env
+resources.json
