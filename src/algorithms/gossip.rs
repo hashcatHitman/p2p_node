@@ -53,6 +53,10 @@ impl PeerEntry {
         }
     }
 
+    pub const fn time_to_live_mut(&mut self) -> &mut i8 {
+        &mut self.time_to_live
+    }
+
     pub fn queue_url(&self) -> &str {
         &self.queue_url
     }
