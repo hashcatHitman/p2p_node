@@ -302,7 +302,7 @@ impl P2PNode {
             .unwrap()
             .clone();
         self.log(&format!("Got a peer list from: {sender_id}"));
-        let _: u8 = self.gossip.receive_peer_list(incoming, sender_id);
+        let _: u8 = self.gossip.receive_peer_list(incoming, &sender_id);
 
         for (peer, record) in self.gossip.peers() {
             self.heartbeat.add_peer(peer.clone());

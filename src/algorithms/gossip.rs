@@ -146,7 +146,7 @@ impl GossipNode {
     pub fn receive_peer_list(
         &mut self,
         incoming: Vec<serde_json::Value>,
-        sender_id: String,
+        sender_id: &str,
     ) -> u8 {
         let mut new_count: u8 = 0;
 
@@ -301,7 +301,7 @@ mod test {
         let incoming = vec![
             json!({"node_id": "node-c", "queue_url": "https://sqs.fake/c"}),
         ];
-        let new = node.receive_peer_list(incoming, "node-b".to_owned());
+        let new = node.receive_peer_list(incoming, "node-b");
         assert!(node.known_peer_count() >= 2);
         assert_eq!(new, 1);
     }
@@ -313,7 +313,7 @@ mod test {
         let incoming = vec![
             json!({"node_id": "node-b", "queue_url": "https://sqs.fake/b"}),
         ];
-        let new = node.receive_peer_list(incoming, "node-b".to_owned());
+        let new = node.receive_peer_list(incoming, "node-b");
         assert_eq!(new, 0);
     }
 
