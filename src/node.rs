@@ -468,6 +468,7 @@ impl P2PNode {
     }
 
     pub fn log(&self, message: &str) {
-        todo!()
+        let timestamp = jiff::Timestamp::now().to_string();
+        println!("[{timestamp}] [{}] {message}", self.node_id);
     }
 }
