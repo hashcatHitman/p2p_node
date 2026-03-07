@@ -286,7 +286,7 @@ impl P2PNode {
 
         let plist = protocol::peer_list(
             self.node_id.clone(),
-            self.gossip.get_peer_list_message(),
+            &self.gossip.get_peer_list_message(),
         );
 
         self.transport.send(node_id, Value::Object(plist));
@@ -400,7 +400,7 @@ impl P2PNode {
     pub fn do_gossip(&mut self) {
         if let Some(target) = self.gossip.pick_gossip_target() {
             let peers = self.gossip.get_peer_list_message();
-            let message = protocol::peer_list(self.node_id.clone(), peers);
+            let message = protocol::peer_list(self.node_id.clone(), &peers);
             self.transport.send(target.clone(), Value::Object(message));
             self.log(&format!("Sent gossip to: {target}"));
         }
