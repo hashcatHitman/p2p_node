@@ -257,7 +257,7 @@ impl P2PNode {
                 MessageKind::PeerList => self.handle_peer_list(&message),
                 MessageKind::Ping => self.handle_ping(&message),
                 MessageKind::Pong => self.handle_pong(&message),
-                MessageKind::ViewEvent => self.handle_view_event(message),
+                MessageKind::ViewEvent => self.handle_view_event(&message),
                 MessageKind::AuditResult => self.handle_audit_result(message),
                 MessageKind::Choke => self.handle_choke(message),
                 MessageKind::Unchoke => self.handle_unchoke(message),
@@ -349,7 +349,7 @@ impl P2PNode {
         self.reputation.record_heartbeat(&node_id, true);
     }
 
-    pub fn handle_view_event(&self, message: Map<String, Value>) {
+    pub fn handle_view_event(&self, message: &Map<String, Value>) {
         self.log("todo!: handle_view_event");
     }
 
