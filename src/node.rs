@@ -345,7 +345,7 @@ impl P2PNode {
             message.get("seq").map(|s| s.as_u64().unwrap()).unwrap() as u16;
         self.log(&format!("Got a pong from: {node_id} (#{seq})"));
 
-        self.heartbeat.receive_pong(node_id.clone(), seq.into());
+        self.heartbeat.receive_pong(&node_id, seq.into());
         self.reputation.record_heartbeat(node_id, true);
     }
 
