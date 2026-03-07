@@ -108,8 +108,8 @@ impl ChokingNode {
     }
 
     /// Record that a peer contributed `units` to us.
-    pub fn record_contribution(&mut self, from_peer: String, units: u32) {
-        if let Some(peer) = self.peers.get_mut(&from_peer) {
+    pub fn record_contribution(&mut self, from_peer: &str, units: u32) {
+        if let Some(peer) = self.peers.get_mut(from_peer) {
             peer.contributed += units;
         }
     }
@@ -263,7 +263,7 @@ mod test {
         node.add_peer("node-c".to_owned(), true);
 
         for _ in 0..10 {
-            node.record_contribution("node-b".to_owned(), 5);
+            node.record_contribution("node-b", 5);
         }
 
         node.run_choking_round();
@@ -279,7 +279,7 @@ mod test {
 
         for peer in ["node-b", "node-c", "node-d", "node-e"] {
             node.add_peer(peer.to_owned(), true);
-            node.record_contribution(peer.to_owned(), 1);
+            node.record_contribution(peer, 1);
         }
 
         node.run_choking_round();
@@ -294,7 +294,7 @@ mod test {
 
         for peer in ["node-b", "node-c", "node-d"] {
             node.add_peer(peer.to_owned(), true);
-            node.record_contribution(peer.to_owned(), 1);
+            node.record_contribution(peer, 1);
         }
 
         node.run_choking_round();
@@ -315,8 +315,8 @@ mod test {
             node.add_peer(peer.to_owned(), true);
         }
 
-        node.record_contribution("node-b".to_owned(), 10);
-        node.record_contribution("node-c".to_owned(), 8);
+        node.record_contribution("node-b", 10);
+        node.record_contribution("node-c", 8);
 
         for _ in 0..3 {
             node.run_choking_round();

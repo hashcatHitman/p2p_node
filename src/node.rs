@@ -330,7 +330,7 @@ impl P2PNode {
         let response = protocol::pong(node_id.clone(), seq);
         self.transport
             .send(node_id.clone(), Value::Object(response));
-        self.choking.record_contribution(node_id.clone(), 1);
+        self.choking.record_contribution(&node_id, 1);
         self.reputation.record_contribution(node_id, 1);
     }
 
