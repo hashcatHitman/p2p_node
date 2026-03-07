@@ -171,8 +171,8 @@ impl HeartbeatNode {
     /// Args:
     ///     peer_id:       node_id of the non-responding peer
     ///     current_round: current poll round number
-    pub fn record_miss(&mut self, peer_id: String, current_round: u32) {
-        if let Some(peer) = self.peers.get_mut(&peer_id) {
+    pub fn record_miss(&mut self, peer_id: &str, current_round: u32) {
+        if let Some(peer) = self.peers.get_mut(peer_id) {
             if peer.status == PeerStatus::Dead {
                 return;
             }
@@ -291,7 +291,7 @@ mod test {
 
         for round in 1..=GRACE {
             drop(node.send_pings(round.into()));
-            node.record_miss("node-b".to_owned(), round.into());
+            node.record_miss("node-b", round.into());
         }
 
         let suspicious = node.get_suspect_peers();
@@ -309,7 +309,7 @@ mod test {
 
         for round in 1..=THRESHOLD {
             drop(node.send_pings(round.into()));
-            node.record_miss("node-b".to_owned(), round.into());
+            node.record_miss("node-b", round.into());
         }
 
         let dead = node.get_dead_peers();
@@ -323,7 +323,7 @@ mod test {
 
         for round in 1..=2 {
             drop(node.send_pings(round));
-            node.record_miss("node-b".to_owned(), round);
+            node.record_miss("node-b", round);
         }
 
         let suspicious = node.get_suspect_peers();
@@ -345,7 +345,7 @@ mod test {
 
         for round in 1..4 {
             drop(node.send_pings(round));
-            node.record_miss("node-b".to_owned(), round);
+            node.record_miss("node-b", round);
         }
 
         let dead = node.get_dead_peers();
@@ -363,11 +363,11 @@ mod test {
         node.add_peer("node-d".to_owned());
 
         for round in 1..3 {
-            node.record_miss("node-b".to_owned(), round);
+            node.record_miss("node-b", round);
         }
 
         for round in 1..4 {
-            node.record_miss("node-c".to_owned(), round);
+            node.record_miss("node-c", round);
         }
 
         let living: HashSet<String> =
