@@ -179,8 +179,8 @@ impl ReputationNode {
     }
 
     /// Record that a peer consumed `units` from us.
-    pub fn record_consumption(&mut self, peer_id: String, units: u32) {
-        if let Some(peer) = self.peers.get_mut(&peer_id) {
+    pub fn record_consumption(&mut self, peer_id: &str, units: u32) {
+        if let Some(peer) = self.peers.get_mut(peer_id) {
             peer.consumptions += 1;
         }
     }
