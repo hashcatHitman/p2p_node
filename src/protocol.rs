@@ -90,7 +90,7 @@ pub fn hello(sender: String, queue_url: String) -> Map<String, Value> {
     message
 }
 
-pub fn peer_list(sender: String, peers: Vec<Value>) -> Map<String, Value> {
+pub fn peer_list(sender: String, peers: &[Value]) -> Map<String, Value> {
     let mut message = base(MessageKind::PeerList, sender);
 
     drop(message.insert("peers".to_owned(), json!(peers)));
