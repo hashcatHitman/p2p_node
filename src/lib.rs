@@ -27,6 +27,9 @@
     reason = "to worry about later"
 )]
 
+use aws_config as _;
+use tokio as _;
+
 pub mod algorithms;
 pub mod node;
 pub mod protocol;

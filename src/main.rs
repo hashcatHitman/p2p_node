@@ -4,7 +4,16 @@
 
 //! This isn't a real project.
 
-#![expect(unused_crate_dependencies, reason = "to worry about later")]
+#![expect(
+    unused_crate_dependencies,
+    clippy::result_large_err,
+    reason = "to worry about later"
+)]
+#![allow(
+    clippy::missing_panics_doc,
+    clippy::missing_errors_doc,
+    reason = "to worry about later"
+)]
 
 use aws_sdk_sqs as sqs;
 use p2p_node::node::P2PNode;
