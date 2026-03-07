@@ -146,8 +146,8 @@ impl HeartbeatNode {
     /// Args:
     ///     from_node:     node_id of the peer who replied
     ///     current_round: current poll round number
-    pub fn receive_pong(&mut self, from_node: String, current_round: u32) {
-        if let Some(peer) = self.peers.get_mut(&from_node) {
+    pub fn receive_pong(&mut self, from_node: &str, current_round: u32) {
+        if let Some(peer) = self.peers.get_mut(from_node) {
             peer.total_pongs_received += 1;
             peer.last_pong_round = current_round;
             let old = peer.status;
@@ -278,7 +278,7 @@ mod test {
         let mut node = HeartbeatNode::new("node-a".to_owned(), 3, 2);
         node.add_peer("node-b".to_owned());
         drop(node.send_pings(1));
-        node.receive_pong("node-b".to_owned(), 1);
+        node.receive_pong("node-b", 1);
         let living = node.get_alive_peers();
         assert!(living.contains(&"node-b".to_owned()));
     }
@@ -329,7 +329,7 @@ mod test {
         let suspicious = node.get_suspect_peers();
         assert!(suspicious.contains(&"node-b".to_owned()));
 
-        node.receive_pong("node-b".to_owned(), 3);
+        node.receive_pong("node-b", 3);
 
         let living = node.get_alive_peers();
         assert!(living.contains(&"node-b".to_owned()));
