@@ -119,7 +119,7 @@ impl ChokingNode {
         clippy::todo,
         reason = "record where? why does the assignment include this API?"
     )]
-    pub fn record_serving(&self, to_peer: String, units: u32) {
+    pub fn record_serving(&self, to_peer: &str, units: u32) {
         todo!()
     }
 
