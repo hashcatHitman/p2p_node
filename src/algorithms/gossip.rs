@@ -98,6 +98,10 @@ impl GossipNode {
         &self.peers
     }
 
+    pub const fn peers_mut(&mut self) -> &mut HashMap<String, PeerEntry> {
+        &mut self.peers
+    }
+
     /// Manually add or refresh a peer (bootstrap / initial knowledge).
     ///
     /// Called when:
