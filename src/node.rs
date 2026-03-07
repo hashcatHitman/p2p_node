@@ -346,7 +346,7 @@ impl P2PNode {
         self.log(&format!("Got a pong from: {node_id} (#{seq})"));
 
         self.heartbeat.receive_pong(&node_id, seq.into());
-        self.reputation.record_heartbeat(node_id, true);
+        self.reputation.record_heartbeat(&node_id, true);
     }
 
     pub fn handle_view_event(&self, message: Map<String, Value>) {

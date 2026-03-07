@@ -161,8 +161,8 @@ impl ReputationNode {
     }
 
     /// Record a heartbeat event (whether the peer responded to a PING).
-    pub fn record_heartbeat(&mut self, peer_id: String, responded: bool) {
-        if let Some(peer) = self.peers.get_mut(&peer_id) {
+    pub fn record_heartbeat(&mut self, peer_id: &str, responded: bool) {
+        if let Some(peer) = self.peers.get_mut(peer_id) {
             peer.heartbeats_total += 1;
 
             if responded {
@@ -436,8 +436,8 @@ mod test {
         node.add_peer("node-offline".to_owned());
 
         for _ in 0..10 {
-            node.record_heartbeat("node-reliable".to_owned(), true);
-            node.record_heartbeat("node-offline".to_owned(), false);
+            node.record_heartbeat("node-reliable", true);
+            node.record_heartbeat("node-offline", false);
         }
 
         node.update_all_scores();
