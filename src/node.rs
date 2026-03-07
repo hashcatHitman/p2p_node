@@ -254,7 +254,7 @@ impl P2PNode {
         match MessageKind::from_str(&message_type) {
             Ok(kind) => match kind {
                 MessageKind::Hello => self.handle_hello(&message),
-                MessageKind::PeerList => self.handle_peer_list(message),
+                MessageKind::PeerList => self.handle_peer_list(&message),
                 MessageKind::Ping => self.handle_ping(message),
                 MessageKind::Pong => self.handle_pong(message),
                 MessageKind::ViewEvent => self.handle_view_event(message),
@@ -292,7 +292,7 @@ impl P2PNode {
         self.transport.send(node_id, Value::Object(plist));
     }
 
-    pub fn handle_peer_list(&mut self, message: Map<String, Value>) {
+    pub fn handle_peer_list(&mut self, message: &Map<String, Value>) {
         let sender_id = message.get("sender").map(ToString::to_string).unwrap();
         let incoming_lol = message.get("peers").unwrap();
         let incoming: Vec<Value> = message
