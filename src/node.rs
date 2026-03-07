@@ -258,7 +258,7 @@ impl P2PNode {
                 MessageKind::Ping => self.handle_ping(&message),
                 MessageKind::Pong => self.handle_pong(&message),
                 MessageKind::ViewEvent => self.handle_view_event(&message),
-                MessageKind::AuditResult => self.handle_audit_result(message),
+                MessageKind::AuditResult => self.handle_audit_result(&message),
                 MessageKind::Choke => self.handle_choke(message),
                 MessageKind::Unchoke => self.handle_unchoke(message),
             },
@@ -353,7 +353,7 @@ impl P2PNode {
         self.log("todo!: handle_view_event");
     }
 
-    pub fn handle_audit_result(&self, message: Map<String, Value>) {
+    pub fn handle_audit_result(&self, message: &Map<String, Value>) {
         self.log("todo!: handle_audit_result");
     }
 
