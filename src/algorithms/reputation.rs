@@ -207,7 +207,7 @@ impl ReputationNode {
     ///     group's share of total weighted votes (0.0 to 1.0)
     pub fn weighted_majority_vote(
         &self,
-        votes: HashMap<String, u32>,
+        votes: &HashMap<String, u32>,
         verbose: bool,
     ) -> (Option<u32>, f64) {
         if votes.is_empty() {
@@ -217,7 +217,7 @@ impl ReputationNode {
         let mut weighted = HashMap::new();
         let mut total_weight = 0.0;
 
-        for (peer_id, value) in &votes {
+        for (peer_id, value) in votes {
             let weight = self
                 .peers
                 .get(peer_id)
@@ -250,7 +250,7 @@ impl ReputationNode {
             if verbose {
                 println!("  Votes: {votes:?}");
                 print!("  Weights: ");
-                for (peer_id, votes) in &votes {
+                for (peer_id, votes) in votes {
                     let weight = self
                         .peers
                         .get(peer_id)
@@ -392,7 +392,7 @@ mod test {
         let _: Option<u32> = votes.insert("node-b".to_owned(), 100);
         let _: Option<u32> = votes.insert("node-c".to_owned(), 9999);
 
-        let (result, confidence) = node.weighted_majority_vote(votes, false);
+        let (result, confidence) = node.weighted_majority_vote(&votes, false);
 
         assert_eq!(result, Some(100));
         assert!(0.0 < confidence);
@@ -421,10 +421,10 @@ mod test {
         let _: Option<u32> = split_votes.insert("node-d".to_owned(), 999);
 
         let (_, unanimous_confidence) =
-            node.weighted_majority_vote(unaninmous_votes, false);
+            node.weighted_majority_vote(&unaninmous_votes, false);
 
         let (_, split_confidence) =
-            node.weighted_majority_vote(split_votes, false);
+            node.weighted_majority_vote(&split_votes, false);
 
         assert!(unanimous_confidence > split_confidence);
     }
