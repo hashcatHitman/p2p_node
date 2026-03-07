@@ -255,7 +255,7 @@ impl P2PNode {
             Ok(kind) => match kind {
                 MessageKind::Hello => self.handle_hello(&message),
                 MessageKind::PeerList => self.handle_peer_list(&message),
-                MessageKind::Ping => self.handle_ping(message),
+                MessageKind::Ping => self.handle_ping(&message),
                 MessageKind::Pong => self.handle_pong(message),
                 MessageKind::ViewEvent => self.handle_view_event(message),
                 MessageKind::AuditResult => self.handle_audit_result(message),
@@ -316,7 +316,7 @@ impl P2PNode {
         }
     }
 
-    pub fn handle_ping(&mut self, message: Map<String, Value>) {
+    pub fn handle_ping(&mut self, message: &Map<String, Value>) {
         let node_id = message.get("sender").map(ToString::to_string).unwrap();
         #[expect(
             clippy::cast_possible_truncation,
