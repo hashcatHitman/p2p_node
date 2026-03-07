@@ -6,11 +6,24 @@
 
 #![expect(unused_crate_dependencies, reason = "to worry about later")]
 
+use aws_sdk_sqs as sqs;
+use p2p_node::node::P2PNode;
+
 /// This isn't a real project.
 ///
 /// ```rust
 /// println!("hello")
 /// ```
-fn main() {
-    println!("{}", p2p_node::read_a_book());
+#[::tokio::main]
+async fn main() -> Result<(), sqs::Error> {
+    let config = aws_config::load_from_env().await;
+    let client = aws_sdk_sqs::Client::new(&config);
+
+    let mut node = P2PNode::new("sam".to_owned(), true, client).await;
+
+    node.bootstrap(None).await;
+
+    node.run().await;
+
+    Ok(())
 }
