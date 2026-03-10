@@ -362,7 +362,8 @@ impl P2PNode {
     }
 
     pub fn handle_choke(&self, message: &Map<String, Value>) {
-        self.log("todo!: handle_choke");
+        let node_id = message.get("sender").map(ToString::to_string).unwrap();
+        self.log(&format!("Choked by {node_id}"));
     }
 
     pub fn handle_unchoke(&self, message: &Map<String, Value>) {
