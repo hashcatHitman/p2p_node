@@ -207,9 +207,9 @@ impl ReputationNode {
     ///     group's share of total weighted votes (0.0 to 1.0)
     pub fn weighted_majority_vote(
         &self,
-        votes: &HashMap<String, u32>,
+        votes: &HashMap<String, u64>,
         verbose: bool,
-    ) -> (Option<u32>, f64) {
+    ) -> (Option<u64>, f64) {
         if votes.is_empty() {
             return (None, 0.0);
         }
@@ -233,7 +233,7 @@ impl ReputationNode {
             total_weight += weight;
         }
 
-        let mut weighted: Vec<(u32, TotalCmpF64)> = weighted
+        let mut weighted: Vec<(u64, TotalCmpF64)> = weighted
             .into_iter()
             .map(|(&value, weight)| (value, TotalCmpF64(weight)))
             .collect();
@@ -389,8 +389,8 @@ mod test {
         node.update_all_scores();
 
         let mut votes = HashMap::new();
-        let _: Option<u32> = votes.insert("node-b".to_owned(), 100);
-        let _: Option<u32> = votes.insert("node-c".to_owned(), 9999);
+        let _: Option<u64> = votes.insert("node-b".to_owned(), 100);
+        let _: Option<u64> = votes.insert("node-c".to_owned(), 9999);
 
         let (result, confidence) = node.weighted_majority_vote(&votes, false);
 
@@ -411,14 +411,14 @@ mod test {
         node.update_all_scores();
 
         let mut unaninmous_votes = HashMap::new();
-        let _: Option<u32> = unaninmous_votes.insert("node-b".to_owned(), 100);
-        let _: Option<u32> = unaninmous_votes.insert("node-c".to_owned(), 100);
-        let _: Option<u32> = unaninmous_votes.insert("node-d".to_owned(), 100);
+        let _: Option<u64> = unaninmous_votes.insert("node-b".to_owned(), 100);
+        let _: Option<u64> = unaninmous_votes.insert("node-c".to_owned(), 100);
+        let _: Option<u64> = unaninmous_votes.insert("node-d".to_owned(), 100);
 
         let mut split_votes = HashMap::new();
-        let _: Option<u32> = split_votes.insert("node-b".to_owned(), 100);
-        let _: Option<u32> = split_votes.insert("node-c".to_owned(), 100);
-        let _: Option<u32> = split_votes.insert("node-d".to_owned(), 999);
+        let _: Option<u64> = split_votes.insert("node-b".to_owned(), 100);
+        let _: Option<u64> = split_votes.insert("node-c".to_owned(), 100);
+        let _: Option<u64> = split_votes.insert("node-d".to_owned(), 999);
 
         let (_, unanimous_confidence) =
             node.weighted_majority_vote(&unaninmous_votes, false);

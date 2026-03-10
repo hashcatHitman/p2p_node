@@ -541,11 +541,7 @@ impl P2PNode {
                     }
                 };
 
-                #[expect(
-                    clippy::cast_possible_truncation,
-                    reason = "todo: just make the counts u64 everywhere"
-                )]
-                let count_freeze = *count as u32;
+                let count_freeze = *count;
 
                 self.log(&format!(
                     "Publishing: {event_id}, {key}, {count_freeze}"
@@ -574,14 +570,10 @@ impl P2PNode {
             .choose(&mut rand::rng())
         {
             Some((content_id, events)) => {
-                #[expect(
-                    clippy::cast_possible_truncation,
-                    reason = "todo: just make the counts u64 everywhere"
-                )]
-                let votes: HashMap<String, u32> = events
+                let votes: HashMap<String, u64> = events
                     .iter()
                     .map(|(peer_id, view_event)| {
-                        (peer_id.clone(), view_event.count() as u32)
+                        (peer_id.clone(), view_event.count())
                     })
                     .collect();
 
@@ -591,8 +583,7 @@ impl P2PNode {
                 match agreed_count {
                     Some(count) => {
                         for (peer_id, view_event) in events {
-                            let was_accurate =
-                                view_event.count() as u32 == count;
+                            let was_accurate = view_event.count() == count;
                             self.reputation
                                 .record_report(peer_id, was_accurate);
                         }

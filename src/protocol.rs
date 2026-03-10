@@ -115,7 +115,7 @@ pub fn view_event(
     sender: String,
     event_id: String,
     content_id: String,
-    count: u32,
+    count: u64,
     ad_id: String,
 ) -> Map<String, Value> {
     let mut message = base(MessageKind::ViewEvent, sender);
@@ -129,7 +129,7 @@ pub fn view_event(
 pub fn audit_result(
     sender: String,
     content_id: String,
-    agreed_count: u32,
+    agreed_count: u64,
     confidence: f64,
     voters: Option<Vec<String>>,
 ) -> Map<String, Value> {
