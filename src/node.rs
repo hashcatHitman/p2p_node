@@ -169,6 +169,7 @@ pub struct P2PNode {
     heartbeat: HeartbeatNode,
     choking: ChokingNode,
     reputation: ReputationNode,
+    view_events: Vec<ViewEvent>,
     gossip_interval: u16,
     heartbeat_interval: u16,
     choking_interval: u16,
@@ -203,6 +204,7 @@ impl P2PNode {
             heartbeat: HeartbeatNode::new(node_id.clone(), 3, 2),
             choking: ChokingNode::new(node_id.clone(), 4, 3),
             reputation: ReputationNode::new(node_id),
+            view_events: Vec::new(),
             gossip_interval: 15,
             heartbeat_interval: 10,
             choking_interval: 30,
@@ -375,6 +377,7 @@ impl P2PNode {
             .filter(|inner| !inner.is_empty());
         let view_event = ViewEvent::new(event_id, content_id, count, ad_id);
         self.log(&format!("View event from {node_id}: {view_event:?}"));
+        self.view_events.push(view_event);
         self.choking.record_contribution(node_id, 1);
         self.reputation.record_contribution(node_id, 1);
     }
