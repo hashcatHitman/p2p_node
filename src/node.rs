@@ -170,18 +170,20 @@ pub struct P2PNode {
     heartbeat: HeartbeatNode,
     choking: ChokingNode,
     reputation: ReputationNode,
-    view_events: Vec<ViewEvent>,
+    view_events: HashMap<String, HashMap<String, ViewEvent>>,
     view_counts: HashMap<&'static str, u64>,
     gossip_interval: u16,
     heartbeat_interval: u16,
     choking_interval: u16,
     reputation_interval: u16,
     publish_interval: u16,
+    audit_interval: u16,
     last_gossip: time::Instant,
     last_heartbeat: time::Instant,
     last_choking: time::Instant,
     last_reputation: time::Instant,
     last_publish: time::Instant,
+    last_audit: time::Instant,
     ping_seq: u16,
     messages_received: u32,
     messages_sent: u32,
@@ -208,7 +210,7 @@ impl P2PNode {
             heartbeat: HeartbeatNode::new(node_id.clone(), 3, 2),
             choking: ChokingNode::new(node_id.clone(), 4, 3),
             reputation: ReputationNode::new(node_id),
-            view_events: Vec::new(),
+            view_events: HashMap::new(),
             view_counts: HashMap::from_iter([
                 ("show:midnight-run", 0),
                 ("show:neon-drift", 0),
@@ -219,11 +221,13 @@ impl P2PNode {
             choking_interval: 30,
             reputation_interval: 30,
             publish_interval: 15,
+            audit_interval: 45,
             last_gossip: time::Instant::now(),
             last_heartbeat: time::Instant::now(),
             last_choking: time::Instant::now(),
             last_reputation: time::Instant::now(),
             last_publish: time::Instant::now(),
+            last_audit: time::Instant::now(),
             ping_seq: 0,
             messages_received: 0,
             messages_sent: 0,
@@ -386,9 +390,25 @@ impl P2PNode {
             .and_then(Value::as_str)
             .map(ToOwned::to_owned)
             .filter(|inner| !inner.is_empty());
-        let view_event = ViewEvent::new(event_id, content_id, count, ad_id);
+        let view_event = ViewEvent::new(
+            node_id.to_owned(),
+            event_id,
+            content_id.clone(),
+            count,
+            ad_id,
+        );
         self.log(&format!("View event from {node_id}: {view_event:?}"));
-        self.view_events.push(view_event);
+        match self.view_events.get_mut(&content_id) {
+            Some(map) => {
+                drop(map.insert(node_id.to_owned(), view_event));
+            }
+            None => {
+                drop(self.view_events.insert(
+                    content_id,
+                    HashMap::from_iter([(node_id.to_owned(), view_event)]),
+                ));
+            }
+        }
         self.choking.record_contribution(node_id, 1);
         self.reputation.record_contribution(node_id, 1);
     }
@@ -464,6 +484,13 @@ impl P2PNode {
             self.do_publish();
             self.last_publish = now;
         }
+
+        if now - self.last_audit
+            >= time::Duration::from_secs(self.audit_interval.into())
+        {
+            self.do_audit();
+            self.last_audit = now;
+        }
     }
 
     pub fn do_gossip(&mut self) {
@@ -536,6 +563,59 @@ impl P2PNode {
                 }
             }
             None => self.log("Failed to publish: no known content"),
+        }
+    }
+
+    pub fn do_audit(&mut self) {
+        match self
+            .view_events
+            .iter()
+            .filter(|&(_, map)| map.len() >= 2)
+            .choose(&mut rand::rng())
+        {
+            Some((content_id, events)) => {
+                #[expect(
+                    clippy::cast_possible_truncation,
+                    reason = "todo: just make the counts u64 everywhere"
+                )]
+                let votes: HashMap<String, u32> = events
+                    .iter()
+                    .map(|(peer_id, view_event)| {
+                        (peer_id.clone(), view_event.count() as u32)
+                    })
+                    .collect();
+
+                let (agreed_count, confidence) =
+                    self.reputation.weighted_majority_vote(&votes, true);
+
+                match agreed_count {
+                    Some(count) => {
+                        for (peer_id, view_event) in events {
+                            let was_accurate =
+                                view_event.count() as u32 == count;
+                            self.reputation
+                                .record_report(peer_id, was_accurate);
+                        }
+                        let voter_ids: Vec<String> =
+                            votes.keys().cloned().collect();
+
+                        let message = protocol::audit_result(
+                            self.node_id.clone(),
+                            content_id.clone(),
+                            count,
+                            confidence,
+                            Some(voter_ids),
+                        );
+
+                        for peer in self.heartbeat.get_alive_peers() {
+                            self.transport
+                                .send(peer, Value::Object(message.clone()));
+                        }
+                    }
+                    None => self.log("Audit failure: agreed count was None"),
+                }
+            }
+            None => self.log("Audit failure: no eligible content_id"),
         }
     }
 
