@@ -357,8 +357,28 @@ impl P2PNode {
         self.log("todo!: handle_view_event");
     }
 
-    pub fn handle_audit_result(&self, message: &Map<String, Value>) {
-        self.log("todo!: handle_audit_result");
+    pub fn handle_audit_result(&mut self, message: &Map<String, Value>) {
+        let node_id = message.get("sender").and_then(Value::as_str).unwrap();
+
+        let content_id =
+            message.get("content_id").and_then(Value::as_str).unwrap();
+
+        let agreed_count =
+            message.get("agreed_count").and_then(Value::as_u64).unwrap();
+        let confidence =
+            message.get("confidence").and_then(Value::as_f64).unwrap() * 100.0;
+        let voters: Vec<&str> = message
+            .get("voters")
+            .and_then(Value::as_array)
+            .map(|vec| vec.iter().map(|v| v.as_str().unwrap()).collect())
+            .unwrap();
+
+        let log = format!(
+            "Audit result from {node_id}: \"{content_id}\", {agreed_count} \
+            views, {confidence:.2}% confidence, as voted by {voters:?}"
+        );
+        self.log(&log);
+        self.reputation.record_contribution(node_id, 1);
     }
 
     pub fn handle_choke(&self, message: &Map<String, Value>) {
