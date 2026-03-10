@@ -244,19 +244,18 @@ impl P2PNode {
     }
 
     pub fn handle_message(&mut self, message: &Map<String, Value>) {
-        let node_id = message.get("sender").map(ToString::to_string).unwrap();
-        let message_type =
-            message.get("type").map(ToString::to_string).unwrap();
+        let node_id = message.get("sender").and_then(Value::as_str).unwrap();
+        let message_type = message.get("type").and_then(Value::as_str).unwrap();
         if node_id == self.node_id {
             return;
         }
         self.messages_received += 1;
 
-        if let Some(sender) = self.gossip.peers_mut().get_mut(&node_id) {
+        if let Some(sender) = self.gossip.peers_mut().get_mut(node_id) {
             *sender.time_to_live_mut() = 5;
         }
 
-        match MessageKind::from_str(&message_type) {
+        match MessageKind::from_str(message_type) {
             Ok(kind) => match kind {
                 MessageKind::Hello => self.handle_hello(message),
                 MessageKind::PeerList => self.handle_peer_list(message),
@@ -274,19 +273,20 @@ impl P2PNode {
     }
 
     pub fn handle_hello(&mut self, message: &Map<String, Value>) {
-        let node_id = message.get("sender").map(ToString::to_string).unwrap();
+        let node_id = message.get("sender").and_then(Value::as_str).unwrap();
         let queue_url =
-            message.get("queue_url").map(ToString::to_string).unwrap();
+            message.get("queue_url").and_then(Value::as_str).unwrap();
         self.log(&format!("Got a hello from: {node_id}"));
-        self.gossip.add_peer(node_id.clone(), queue_url.clone());
-        self.heartbeat.add_peer(node_id.clone());
-        self.choking.add_peer(node_id.clone(), true);
-        self.reputation.add_peer(node_id.clone());
+        self.gossip
+            .add_peer(node_id.to_owned(), queue_url.to_owned());
+        self.heartbeat.add_peer(node_id.to_owned());
+        self.choking.add_peer(node_id.to_owned(), true);
+        self.reputation.add_peer(node_id.to_owned());
 
         drop(
             self.transport
                 .queue_url_cache
-                .insert(node_id.clone(), queue_url),
+                .insert(node_id.to_owned(), queue_url.to_owned()),
         );
 
         let plist = protocol::peer_list(
@@ -294,11 +294,12 @@ impl P2PNode {
             &self.gossip.get_peer_list_message(),
         );
 
-        self.transport.send(node_id, Value::Object(plist));
+        self.transport
+            .send(node_id.to_owned(), Value::Object(plist));
     }
 
     pub fn handle_peer_list(&mut self, message: &Map<String, Value>) {
-        let sender_id = message.get("sender").map(ToString::to_string).unwrap();
+        let sender_id = message.get("sender").and_then(Value::as_str).unwrap();
         let incoming_lol = message.get("peers").unwrap();
         let incoming: Vec<Value> = message
             .get("peers")
@@ -307,7 +308,7 @@ impl P2PNode {
             .unwrap()
             .clone();
         self.log(&format!("Got a peer list from: {sender_id}"));
-        let _: u8 = self.gossip.receive_peer_list(incoming, &sender_id);
+        let _: u8 = self.gossip.receive_peer_list(incoming, sender_id);
 
         for (peer, record) in self.gossip.peers() {
             self.heartbeat.add_peer(peer.clone());
@@ -322,7 +323,7 @@ impl P2PNode {
     }
 
     pub fn handle_ping(&mut self, message: &Map<String, Value>) {
-        let node_id = message.get("sender").map(ToString::to_string).unwrap();
+        let node_id = message.get("sender").and_then(Value::as_str).unwrap();
         #[expect(
             clippy::cast_possible_truncation,
             reason = "I have yet to find any good reason for this to even be
@@ -332,15 +333,15 @@ impl P2PNode {
             message.get("seq").map(|s| s.as_u64().unwrap()).unwrap() as u16;
         self.log(&format!("Got a ping from: {node_id} (#{seq})"));
 
-        let response = protocol::pong(node_id.clone(), seq);
+        let response = protocol::pong(node_id.to_owned(), seq);
         self.transport
-            .send(node_id.clone(), Value::Object(response));
-        self.choking.record_contribution(&node_id, 1);
-        self.reputation.record_contribution(&node_id, 1);
+            .send(node_id.to_owned(), Value::Object(response));
+        self.choking.record_contribution(node_id, 1);
+        self.reputation.record_contribution(node_id, 1);
     }
 
     pub fn handle_pong(&mut self, message: &Map<String, Value>) {
-        let node_id = message.get("sender").map(ToString::to_string).unwrap();
+        let node_id = message.get("sender").and_then(Value::as_str).unwrap();
         #[expect(
             clippy::cast_possible_truncation,
             reason = "I have yet to find any good reason for this to even be
@@ -350,8 +351,8 @@ impl P2PNode {
             message.get("seq").map(|s| s.as_u64().unwrap()).unwrap() as u16;
         self.log(&format!("Got a pong from: {node_id} (#{seq})"));
 
-        self.heartbeat.receive_pong(&node_id, seq.into());
-        self.reputation.record_heartbeat(&node_id, true);
+        self.heartbeat.receive_pong(node_id, seq.into());
+        self.reputation.record_heartbeat(node_id, true);
     }
 
     pub fn handle_view_event(&mut self, message: &Map<String, Value>) {
@@ -403,12 +404,12 @@ impl P2PNode {
     }
 
     pub fn handle_choke(&self, message: &Map<String, Value>) {
-        let node_id = message.get("sender").map(ToString::to_string).unwrap();
+        let node_id = message.get("sender").and_then(Value::as_str).unwrap();
         self.log(&format!("Choked by {node_id}"));
     }
 
     pub fn handle_unchoke(&self, message: &Map<String, Value>) {
-        let node_id = message.get("sender").map(ToString::to_string).unwrap();
+        let node_id = message.get("sender").and_then(Value::as_str).unwrap();
         self.log(&format!("Unchoked by {node_id}"));
     }
 
@@ -491,10 +492,11 @@ impl P2PNode {
 
             for message in messages {
                 let receipt =
-                    message.get("_receipt_handle").map(ToString::to_string);
+                    message.get("_receipt_handle").and_then(Value::as_str);
                 self.handle_message(&message);
                 if let Some(receipt) = receipt {
-                    self.transport.delete(self.node_id.clone(), receipt);
+                    self.transport
+                        .delete(self.node_id.clone(), receipt.to_owned());
                 }
             }
 
