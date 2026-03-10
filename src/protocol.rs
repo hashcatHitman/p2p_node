@@ -54,14 +54,14 @@ impl FromStr for MessageKind {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let ok = match s.trim() {
-            "\"HELLO\"" => Self::Hello,
-            "\"PEER_LIST\"" => Self::PeerList,
-            "\"PING\"" => Self::Ping,
-            "\"PONG\"" => Self::Pong,
-            "\"VIEW_EVENT\"" => Self::ViewEvent,
-            "\"AUDIT_RESULT\"" => Self::AuditResult,
-            "\"CHOKE\"" => Self::Choke,
-            "\"UNCHOKE\"" => Self::Unchoke,
+            "HELLO" => Self::Hello,
+            "PEER_LIST" => Self::PeerList,
+            "PING" => Self::Ping,
+            "PONG" => Self::Pong,
+            "VIEW_EVENT" => Self::ViewEvent,
+            "AUDIT_RESULT" => Self::AuditResult,
+            "CHOKE" => Self::Choke,
+            "UNCHOKE" => Self::Unchoke,
             _ => return Err(()),
         };
         Ok(ok)
