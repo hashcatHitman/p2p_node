@@ -367,7 +367,8 @@ impl P2PNode {
     }
 
     pub fn handle_unchoke(&self, message: &Map<String, Value>) {
-        self.log("todo!: handle_unchoke");
+        let node_id = message.get("sender").map(ToString::to_string).unwrap();
+        self.log(&format!("Unchoked by {node_id}"));
     }
 
     pub fn run_periodic_tasks(&mut self) {
