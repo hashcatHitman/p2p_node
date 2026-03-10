@@ -26,10 +26,12 @@ use std::collections::{HashMap, HashSet};
 
 use rand::prelude::IndexedRandom as _;
 
+use crate::node::Id;
+
 /// Tracks a single peer's contribution and choking state.
 #[derive(Debug, Clone)]
 pub struct PeerTracker {
-    node_id: String,
+    node_id: Id,
     contributed: u32,
     received: u32,
     is_choked: bool,
@@ -38,7 +40,7 @@ pub struct PeerTracker {
 }
 
 impl PeerTracker {
-    pub const fn new(node_id: String) -> Self {
+    pub const fn new(node_id: Id) -> Self {
         Self {
             node_id,
             contributed: 0,
@@ -71,18 +73,18 @@ impl Display for PeerTracker {
 
 #[derive(Debug, Clone)]
 pub struct ChokingNode {
-    node_id: String,
+    node_id: Id,
     max_unchoked: u8,
     optimistic_interval: u32,
-    peers: HashMap<String, PeerTracker>,
+    peers: HashMap<Id, PeerTracker>,
     round: u32,
-    optimistic_peer: Option<String>,
+    optimistic_peer: Option<Id>,
     log: Vec<String>,
 }
 
 impl ChokingNode {
     pub fn new(
-        node_id: String,
+        node_id: Id,
         max_unchoked: u8,
         optimistic_interval: u32,
     ) -> Self {
@@ -98,7 +100,7 @@ impl ChokingNode {
     }
 
     /// Register a new peer. New peers start choked.
-    pub fn add_peer(&mut self, node_id: String, interested: bool) {
+    pub fn add_peer(&mut self, node_id: Id, interested: bool) {
         if !self.peers.contains_key(&node_id) {
             drop(
                 self.peers
@@ -108,7 +110,7 @@ impl ChokingNode {
     }
 
     /// Record that a peer contributed `units` to us.
-    pub fn record_contribution(&mut self, from_peer: &str, units: u32) {
+    pub fn record_contribution(&mut self, from_peer: &Id, units: u32) {
         if let Some(peer) = self.peers.get_mut(from_peer) {
             peer.contributed += units;
         }
@@ -119,7 +121,7 @@ impl ChokingNode {
         clippy::todo,
         reason = "record where? why does the assignment include this API?"
     )]
-    pub fn record_serving(&self, to_peer: &str, units: u32) {
+    pub fn record_serving(&self, to_peer: &Id, units: u32) {
         todo!()
     }
 
@@ -139,7 +141,7 @@ impl ChokingNode {
     pub fn run_choking_round(&mut self) {
         self.round += 1;
 
-        let mut interested: Vec<(String, PeerTracker)> = self
+        let mut interested: Vec<(Id, PeerTracker)> = self
             .peers
             .iter()
             .filter(|&(node_id, tracker)| tracker.is_interested)
@@ -167,7 +169,7 @@ impl ChokingNode {
 
         if optimism {
             #[expect(clippy::pattern_type_mismatch, reason = "todo later")]
-            let choked_interested: Vec<&(String, PeerTracker)> = ranked
+            let choked_interested: Vec<&(Id, PeerTracker)> = ranked
                 .iter()
                 .filter(|(node_id, tracker)| !to_unchoke.contains(node_id))
                 .collect();
@@ -209,7 +211,7 @@ impl ChokingNode {
     }
 
     /// Return node_ids of all currently unchoked peers.
-    pub fn get_unchoked_peers(&self) -> Vec<String> {
+    pub fn get_unchoked_peers(&self) -> Vec<Id> {
         self.peers
             .iter()
             .filter(|&(_id, state)| !state.is_choked)
@@ -218,7 +220,7 @@ impl ChokingNode {
     }
 
     /// Return node_ids of all currently choked peers.
-    pub fn get_choked_peers(&self) -> Vec<String> {
+    pub fn get_choked_peers(&self) -> Vec<Id> {
         self.peers
             .iter()
             .filter(|&(_id, state)| state.is_choked)
@@ -246,39 +248,45 @@ mod test {
     use std::collections::HashSet;
 
     use crate::algorithms::choking::ChokingNode;
+    use crate::node::Id;
 
     #[test]
     fn new_peer_starts_choked() {
-        let mut node = ChokingNode::new("node-a".to_owned(), 2, 3);
-        node.add_peer("node-b".to_owned(), true);
-        node.add_peer("node-c".to_owned(), true);
+        let mut node = ChokingNode::new(Id::new("node-a".to_owned()), 2, 3);
+        node.add_peer(Id::new("node-b".to_owned()), true);
+        node.add_peer(Id::new("node-c".to_owned()), true);
         let unchoked = node.get_unchoked_peers();
-        assert!(!unchoked.contains(&"node-b".to_owned()));
+        assert!(!unchoked.contains(&Id::new("node-b".to_owned())));
     }
 
     #[test]
     fn top_contributor_gets_unchoked() {
-        let mut node = ChokingNode::new("node-a".to_owned(), 1, 999);
-        node.add_peer("node-b".to_owned(), true);
-        node.add_peer("node-c".to_owned(), true);
+        let mut node = ChokingNode::new(Id::new("node-a".to_owned()), 1, 999);
+        node.add_peer(Id::new("node-b".to_owned()), true);
+        node.add_peer(Id::new("node-c".to_owned()), true);
 
         for _ in 0..10 {
-            node.record_contribution("node-b", 5);
+            node.record_contribution(&Id::new("node-b".to_owned()), 5);
         }
 
         node.run_choking_round();
 
         let unchoked = node.get_unchoked_peers();
-        assert!(unchoked.contains(&"node-b".to_owned()));
-        assert!(!unchoked.contains(&"node-c".to_owned()));
+        assert!(unchoked.contains(&Id::new("node-b".to_owned())));
+        assert!(!unchoked.contains(&Id::new("node-c".to_owned())));
     }
 
     #[test]
     fn max_unchoked_limit_respected() {
-        let mut node = ChokingNode::new("node-a".to_owned(), 2, 999);
+        let mut node = ChokingNode::new(Id::new("node-a".to_owned()), 2, 999);
 
-        for peer in ["node-b", "node-c", "node-d", "node-e"] {
-            node.add_peer(peer.to_owned(), true);
+        for peer in [
+            &Id::new("node-b".to_owned()),
+            &Id::new("node-c".to_owned()),
+            &Id::new("node-d".to_owned()),
+            &Id::new("node-e".to_owned()),
+        ] {
+            node.add_peer(peer.clone(), true);
             node.record_contribution(peer, 1);
         }
 
@@ -290,33 +298,40 @@ mod test {
 
     #[test]
     fn choked_and_unchoked_disjoint() {
-        let mut node = ChokingNode::new("node-a".to_owned(), 2, 999);
+        let mut node = ChokingNode::new(Id::new("node-a".to_owned()), 2, 999);
 
-        for peer in ["node-b", "node-c", "node-d"] {
-            node.add_peer(peer.to_owned(), true);
+        for peer in [
+            &Id::new("node-b".to_owned()),
+            &Id::new("node-c".to_owned()),
+            &Id::new("node-d".to_owned()),
+        ] {
+            node.add_peer(peer.clone(), true);
             node.record_contribution(peer, 1);
         }
 
         node.run_choking_round();
 
-        let unchoked: HashSet<String> =
+        let unchoked: HashSet<Id> =
             node.get_unchoked_peers().into_iter().collect();
-        let choked: HashSet<String> =
-            node.get_choked_peers().into_iter().collect();
+        let choked: HashSet<Id> = node.get_choked_peers().into_iter().collect();
 
         assert!(unchoked.is_disjoint(&choked));
     }
 
     #[test]
     fn free_rider_stays_choked() {
-        let mut node = ChokingNode::new("node-a".to_owned(), 2, 999);
+        let mut node = ChokingNode::new(Id::new("node-a".to_owned()), 2, 999);
 
-        for peer in ["node-b", "node-c", "node-d"] {
-            node.add_peer(peer.to_owned(), true);
+        for peer in [
+            Id::new("node-b".to_owned()),
+            Id::new("node-c".to_owned()),
+            Id::new("node-d".to_owned()),
+        ] {
+            node.add_peer(peer, true);
         }
 
-        node.record_contribution("node-b", 10);
-        node.record_contribution("node-c", 8);
+        node.record_contribution(&Id::new("node-b".to_owned()), 10);
+        node.record_contribution(&Id::new("node-c".to_owned()), 8);
 
         for _ in 0..3 {
             node.run_choking_round();
@@ -324,15 +339,19 @@ mod test {
 
         let choked = node.get_choked_peers();
 
-        assert!(choked.contains(&"node-d".to_owned()));
+        assert!(choked.contains(&Id::new("node-d".to_owned())));
     }
 
     #[test]
     fn optimistic_unchoke_occurs() {
-        let mut node = ChokingNode::new("node-a".to_owned(), 1, 1);
+        let mut node = ChokingNode::new(Id::new("node-a".to_owned()), 1, 1);
 
-        for peer in ["node-b", "node-c", "node-d"] {
-            node.add_peer(peer.to_owned(), true);
+        for peer in [
+            Id::new("node-b".to_owned()),
+            Id::new("node-c".to_owned()),
+            Id::new("node-d".to_owned()),
+        ] {
+            node.add_peer(peer, true);
         }
 
         node.run_choking_round();

@@ -4,9 +4,11 @@
 
 //! The content module is for data types relating to view events and audits.
 
+use crate::node::Id;
+
 #[derive(Debug, Clone)]
 pub struct ViewEvent {
-    peer_id: String,
+    peer_id: Id,
     event_id: String,
     content_id: String,
     count: u64,
@@ -15,7 +17,7 @@ pub struct ViewEvent {
 
 impl ViewEvent {
     pub const fn new(
-        peer_id: String,
+        peer_id: Id,
         event_id: String,
         content_id: String,
         count: u64,
@@ -30,7 +32,7 @@ impl ViewEvent {
         }
     }
 
-    pub fn peer_id(&self) -> &str {
+    pub const fn peer_id(&self) -> &Id {
         &self.peer_id
     }
 

@@ -28,10 +28,12 @@ use std::collections::HashMap;
 use rand::seq::IteratorRandom as _;
 use serde_json::json;
 
+use crate::node::Id;
+
 /// A single known peer in the gossip table.
 #[derive(Debug, Clone)]
 pub struct PeerEntry {
-    node_id: String,
+    node_id: Id,
     // TODO: there is probably a URL newtype somewhere I could be using.
     queue_url: String,
     // I feel like this should be a date or time. But for now, the reference
@@ -44,7 +46,7 @@ pub struct PeerEntry {
 }
 
 impl PeerEntry {
-    pub const fn new(node_id: String, queue_url: String) -> Self {
+    pub const fn new(node_id: Id, queue_url: String) -> Self {
         Self {
             node_id,
             queue_url,
@@ -76,16 +78,16 @@ impl Display for PeerEntry {
 #[derive(Debug, Clone)]
 pub struct GossipNode {
     /// This node's identifier.
-    node_id: String,
+    node_id: Id,
     // TODO: there is probably a URL newtype somewhere I could be using.
     queue_url: String,
     /// Dict of node_id -> PeerEntry for all known peers.
-    peers: HashMap<String, PeerEntry>,
+    peers: HashMap<Id, PeerEntry>,
     log: Vec<String>,
 }
 
 impl GossipNode {
-    pub fn new(node_id: String, queue_url: String) -> Self {
+    pub fn new(node_id: Id, queue_url: String) -> Self {
         Self {
             node_id,
             queue_url,
@@ -94,11 +96,11 @@ impl GossipNode {
         }
     }
 
-    pub const fn peers(&self) -> &HashMap<String, PeerEntry> {
+    pub const fn peers(&self) -> &HashMap<Id, PeerEntry> {
         &self.peers
     }
 
-    pub const fn peers_mut(&mut self) -> &mut HashMap<String, PeerEntry> {
+    pub const fn peers_mut(&mut self) -> &mut HashMap<Id, PeerEntry> {
         &mut self.peers
     }
 
@@ -111,7 +113,7 @@ impl GossipNode {
     /// Args:
     ///    node_id:   The peer's identifier.
     ///    queue_url: The peer's SQS queue URL.
-    pub fn add_peer(&mut self, node_id: String, queue_url: String) {
+    pub fn add_peer(&mut self, node_id: Id, queue_url: String) {
         if self.node_id != node_id && !self.peers.contains_key(&node_id) {
             drop(
                 self.peers.insert(
@@ -130,11 +132,11 @@ impl GossipNode {
         let mut entries = Vec::new();
         for peer in self.peers.values() {
             entries.push(
-                json!({"node_id": peer.node_id, "queue_url": peer.queue_url}),
+                json!({"node_id": peer.node_id.as_str(), "queue_url": peer.queue_url}),
             );
         }
         entries.push(
-            json!({"node_id": self.node_id, "queue_url": self.queue_url}),
+            json!({"node_id": self.node_id.as_str(), "queue_url": self.queue_url}),
         );
         entries
     }
@@ -154,14 +156,15 @@ impl GossipNode {
     pub fn receive_peer_list(
         &mut self,
         incoming: Vec<serde_json::Value>,
-        sender_id: &str,
+        sender_id: &Id,
     ) -> u8 {
         let mut new_count: u8 = 0;
 
         for entry in incoming {
             let node_id = entry
                 .get("node_id")
-                .and_then(|v| v.as_str().map(ToOwned::to_owned));
+                .and_then(|v| v.as_str().map(ToOwned::to_owned))
+                .map(Id::new);
 
             match node_id {
                 Some(node_id) => {
@@ -220,7 +223,7 @@ impl GossipNode {
 
     /// Pick a random peer to send a PEER_LIST to.
     /// Returns None if no peers are known yet.
-    pub fn pick_gossip_target(&self) -> Option<String> {
+    pub fn pick_gossip_target(&self) -> Option<Id> {
         if self.peers.is_empty() {
             None
         } else {
@@ -250,31 +253,51 @@ mod test {
     use serde_json::json;
 
     use crate::algorithms::gossip::GossipNode;
+    use crate::node::Id;
 
     #[test]
     fn add_peer_increases_count() {
-        let mut node = GossipNode::new("node-a".to_owned(), String::new());
-        node.add_peer("node-b".to_owned(), "https://sqs.fake/b".to_owned());
+        let mut node =
+            GossipNode::new(Id::new("node-a".to_owned()), String::new());
+        node.add_peer(
+            Id::new("node-b".to_owned()),
+            "https://sqs.fake/b".to_owned(),
+        );
         assert_eq!(node.known_peer_count(), 1);
     }
 
     #[test]
     fn add_same_peer_twice_no_duplicate() {
-        let mut node = GossipNode::new("node-a".to_owned(), String::new());
-        node.add_peer("node-b".to_owned(), "https://sqs.fake/b".to_owned());
-        node.add_peer("node-b".to_owned(), "https://sqs.fake/b".to_owned());
+        let mut node =
+            GossipNode::new(Id::new("node-a".to_owned()), String::new());
+        node.add_peer(
+            Id::new("node-b".to_owned()),
+            "https://sqs.fake/b".to_owned(),
+        );
+        node.add_peer(
+            Id::new("node-b".to_owned()),
+            "https://sqs.fake/b".to_owned(),
+        );
         assert_eq!(node.known_peer_count(), 1);
     }
 
     #[test]
     fn pick_target_returns_known_peer() {
-        let mut node = GossipNode::new("node-a".to_owned(), String::new());
-        node.add_peer("node-b".to_owned(), "https://sqs.fake/b".to_owned());
-        node.add_peer("node-c".to_owned(), "https://sqs.fake/c".to_owned());
+        let mut node =
+            GossipNode::new(Id::new("node-a".to_owned()), String::new());
+        node.add_peer(
+            Id::new("node-b".to_owned()),
+            "https://sqs.fake/b".to_owned(),
+        );
+        node.add_peer(
+            Id::new("node-c".to_owned()),
+            "https://sqs.fake/c".to_owned(),
+        );
         let target = node.pick_gossip_target();
         match target {
             Some(chosen) => assert!(
-                ["node-b".to_owned(), "node-c".to_owned()].contains(&chosen)
+                [Id::new("node-b".to_owned()), Id::new("node-c".to_owned())]
+                    .contains(&chosen)
             ),
             None => panic!("failed to pick a gossip target"),
         }
@@ -282,7 +305,7 @@ mod test {
 
     #[test]
     fn pick_target_none_when_empty() {
-        let node = GossipNode::new("node-a".to_owned(), String::new());
+        let node = GossipNode::new(Id::new("node-a".to_owned()), String::new());
         let target = node.pick_gossip_target();
         assert_eq!(target, None);
     }
@@ -290,10 +313,13 @@ mod test {
     #[test]
     fn peer_list_message_format() {
         let mut node = GossipNode::new(
-            "node-a".to_owned(),
+            Id::new("node-a".to_owned()),
             "https://sqs.fake/a".to_owned(),
         );
-        node.add_peer("node-b".to_owned(), "https://sqs.fake/b".to_owned());
+        node.add_peer(
+            Id::new("node-b".to_owned()),
+            "https://sqs.fake/b".to_owned(),
+        );
         let msg = node.get_peer_list_message();
         assert!(!msg.is_empty());
         for entry in msg {
@@ -304,31 +330,45 @@ mod test {
 
     #[test]
     fn receive_discovers_new_peer() {
-        let mut node = GossipNode::new("node-a".to_owned(), String::new());
-        node.add_peer("node-b".to_owned(), "https://sqs.fake/b".to_owned());
+        let mut node =
+            GossipNode::new(Id::new("node-a".to_owned()), String::new());
+        node.add_peer(
+            Id::new("node-b".to_owned()),
+            "https://sqs.fake/b".to_owned(),
+        );
         let incoming = vec![
             json!({"node_id": "node-c", "queue_url": "https://sqs.fake/c"}),
         ];
-        let new = node.receive_peer_list(incoming, "node-b");
+        let new =
+            node.receive_peer_list(incoming, &Id::new("node-b".to_owned()));
         assert!(node.known_peer_count() >= 2);
         assert_eq!(new, 1);
     }
 
     #[test]
     fn receive_no_false_new_for_existing_peer() {
-        let mut node = GossipNode::new("node-a".to_owned(), String::new());
-        node.add_peer("node-b".to_owned(), "https://sqs.fake/b".to_owned());
+        let mut node =
+            GossipNode::new(Id::new("node-a".to_owned()), String::new());
+        node.add_peer(
+            Id::new("node-b".to_owned()),
+            "https://sqs.fake/b".to_owned(),
+        );
         let incoming = vec![
             json!({"node_id": "node-b", "queue_url": "https://sqs.fake/b"}),
         ];
-        let new = node.receive_peer_list(incoming, "node-b");
+        let new =
+            node.receive_peer_list(incoming, &Id::new("node-b".to_owned()));
         assert_eq!(new, 0);
     }
 
     #[test]
     fn age_entries_expires_peers() {
-        let mut node = GossipNode::new("node-a".to_owned(), String::new());
-        node.add_peer("node-b".to_owned(), "https://sqs.fake/b".to_owned());
+        let mut node =
+            GossipNode::new(Id::new("node-a".to_owned()), String::new());
+        node.add_peer(
+            Id::new("node-b".to_owned()),
+            "https://sqs.fake/b".to_owned(),
+        );
 
         for _ in 0..10 {
             node.age_entries();
@@ -339,14 +379,18 @@ mod test {
 
     #[test]
     fn does_not_target_self() {
-        let mut node = GossipNode::new("node-a".to_owned(), String::new());
-        node.add_peer("node-b".to_owned(), "https://sqs.fake/b".to_owned());
+        let mut node =
+            GossipNode::new(Id::new("node-a".to_owned()), String::new());
+        node.add_peer(
+            Id::new("node-b".to_owned()),
+            "https://sqs.fake/b".to_owned(),
+        );
 
         for _ in 0..20 {
             let target = node.pick_gossip_target();
 
             if let Some(chosen) = target {
-                assert_ne!(chosen, "node-a".to_owned());
+                assert_ne!(chosen, Id::new("node-a".to_owned()));
             }
         }
     }

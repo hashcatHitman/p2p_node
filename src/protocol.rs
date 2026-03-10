@@ -21,6 +21,8 @@ use core::str::FromStr;
 
 use serde_json::{Map, Value, json};
 
+use crate::node::Id;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum MessageKind {
     Hello,
@@ -68,7 +70,7 @@ impl FromStr for MessageKind {
     }
 }
 
-pub fn base(kind: MessageKind, sender: String) -> Map<String, Value> {
+pub fn base(kind: MessageKind, sender: &Id) -> Map<String, Value> {
     let mut message = Map::new();
     let timestamp = jiff::Timestamp::now()
         .in_tz("UTC")
@@ -77,34 +79,36 @@ pub fn base(kind: MessageKind, sender: String) -> Map<String, Value> {
         .to_string();
     let message_id = uuid::Uuid::new_v4().to_string();
     drop(message.insert("type".to_owned(), Value::String(kind.to_string())));
-    drop(message.insert("sender".to_owned(), Value::String(sender)));
+    drop(
+        message.insert("sender".to_owned(), Value::String(sender.to_string())),
+    );
     drop(message.insert("timestamp".to_owned(), Value::String(timestamp)));
     drop(message.insert("msg_id".to_owned(), Value::String(message_id)));
 
     message
 }
 
-pub fn hello(sender: String, queue_url: String) -> Map<String, Value> {
+pub fn hello(sender: &Id, queue_url: String) -> Map<String, Value> {
     let mut message = base(MessageKind::Hello, sender);
     drop(message.insert("queue_url".to_owned(), Value::String(queue_url)));
     message
 }
 
-pub fn peer_list(sender: String, peers: &[Value]) -> Map<String, Value> {
+pub fn peer_list(sender: &Id, peers: &[Value]) -> Map<String, Value> {
     let mut message = base(MessageKind::PeerList, sender);
 
     drop(message.insert("peers".to_owned(), json!(peers)));
     message
 }
 
-pub fn ping(sender: String, sequence: u16) -> Map<String, Value> {
+pub fn ping(sender: &Id, sequence: u16) -> Map<String, Value> {
     let mut message = base(MessageKind::Ping, sender);
 
     drop(message.insert("seq".to_owned(), json!(sequence)));
     message
 }
 
-pub fn pong(sender: String, sequence: u16) -> Map<String, Value> {
+pub fn pong(sender: &Id, sequence: u16) -> Map<String, Value> {
     let mut message = base(MessageKind::Pong, sender);
 
     drop(message.insert("seq".to_owned(), json!(sequence)));
@@ -112,7 +116,7 @@ pub fn pong(sender: String, sequence: u16) -> Map<String, Value> {
 }
 
 pub fn view_event(
-    sender: String,
+    sender: &Id,
     event_id: String,
     content_id: String,
     count: u64,
@@ -127,25 +131,26 @@ pub fn view_event(
 }
 
 pub fn audit_result(
-    sender: String,
+    sender: &Id,
     content_id: String,
     agreed_count: u64,
     confidence: f64,
-    voters: Option<Vec<String>>,
+    voters: Option<Vec<Id>>,
 ) -> Map<String, Value> {
     let mut message = base(MessageKind::AuditResult, sender);
     drop(message.insert("content_id".to_owned(), Value::String(content_id)));
     drop(message.insert("agreed_count".to_owned(), json!(agreed_count)));
     drop(message.insert("confidence".to_owned(), json!(confidence)));
-    let voters = voters.unwrap_or_default();
+    let voters: Vec<Id> = voters.unwrap_or_default();
+    let voters: Vec<String> = voters.iter().map(ToString::to_string).collect();
     drop(message.insert("voters".to_owned(), json!(voters)));
     message
 }
 
-pub fn choke(sender: String) -> Map<String, Value> {
+pub fn choke(sender: &Id) -> Map<String, Value> {
     base(MessageKind::Choke, sender)
 }
 
-pub fn unchoke(sender: String) -> Map<String, Value> {
+pub fn unchoke(sender: &Id) -> Map<String, Value> {
     base(MessageKind::Unchoke, sender)
 }
