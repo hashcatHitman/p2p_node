@@ -18,6 +18,7 @@ use aws_sdk_sqs::Client;
 use serde_json::{Map, Value};
 
 use crate::algorithms::choking::ChokingNode;
+use crate::algorithms::content::ViewEvent;
 use crate::algorithms::gossip::GossipNode;
 use crate::algorithms::heartbeat::HeartbeatNode;
 use crate::algorithms::reputation::ReputationNode;
@@ -353,8 +354,28 @@ impl P2PNode {
         self.reputation.record_heartbeat(&node_id, true);
     }
 
-    pub fn handle_view_event(&self, message: &Map<String, Value>) {
-        self.log("todo!: handle_view_event");
+    pub fn handle_view_event(&mut self, message: &Map<String, Value>) {
+        let node_id = message.get("sender").and_then(Value::as_str).unwrap();
+        let event_id = message
+            .get("event_id")
+            .and_then(Value::as_str)
+            .unwrap()
+            .to_owned();
+        let content_id = message
+            .get("content_id")
+            .and_then(Value::as_str)
+            .unwrap()
+            .to_owned();
+        let count = message.get("count").and_then(Value::as_u64).unwrap();
+        let ad_id = message
+            .get("ad_id")
+            .and_then(Value::as_str)
+            .map(ToOwned::to_owned)
+            .filter(|inner| !inner.is_empty());
+        let view_event = ViewEvent::new(event_id, content_id, count, ad_id);
+        self.log(&format!("View event from {node_id}: {view_event:?}"));
+        self.choking.record_contribution(node_id, 1);
+        self.reputation.record_contribution(node_id, 1);
     }
 
     pub fn handle_audit_result(&mut self, message: &Map<String, Value>) {
