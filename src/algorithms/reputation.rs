@@ -27,10 +27,12 @@ use core::fmt;
 use core::fmt::Display;
 use std::collections::HashMap;
 
+use crate::node::Id;
+
 /// Tracks reputation metrics for a single peer.
 #[derive(Debug, Clone)]
 pub struct ReputationRecord {
-    node_id: String,
+    node_id: Id,
     reports_total: u32,
     reports_accurate: u32,
     heartbeats_total: u32,
@@ -42,7 +44,7 @@ pub struct ReputationRecord {
 }
 
 impl ReputationRecord {
-    pub const fn new(node_id: String) -> Self {
+    pub const fn new(node_id: Id) -> Self {
         Self {
             node_id,
             reports_total: 0,
@@ -125,13 +127,13 @@ impl Display for ReputationRecord {
 /// Tracks reputation for all known peers and computes weighted votes.
 #[derive(Debug, Clone)]
 pub struct ReputationNode {
-    node_id: String,
-    peers: HashMap<String, ReputationRecord>,
+    node_id: Id,
+    peers: HashMap<Id, ReputationRecord>,
     log: Vec<String>,
 }
 
 impl ReputationNode {
-    pub fn new(node_id: String) -> Self {
+    pub fn new(node_id: Id) -> Self {
         Self {
             node_id,
             peers: HashMap::new(),
@@ -140,7 +142,7 @@ impl ReputationNode {
     }
 
     /// Register a new peer with a neutral trust score (0.5).
-    pub fn add_peer(&mut self, node_id: String) {
+    pub fn add_peer(&mut self, node_id: Id) {
         if !self.peers.contains_key(&node_id) {
             drop(
                 self.peers
@@ -150,7 +152,7 @@ impl ReputationNode {
     }
 
     /// Record whether a peer's VIEW_EVENT report matched the audit majority.
-    pub fn record_report(&mut self, peer_id: &str, was_accurate: bool) {
+    pub fn record_report(&mut self, peer_id: &Id, was_accurate: bool) {
         if let Some(peer) = self.peers.get_mut(peer_id) {
             peer.reports_total += 1;
 
@@ -161,7 +163,7 @@ impl ReputationNode {
     }
 
     /// Record a heartbeat event (whether the peer responded to a PING).
-    pub fn record_heartbeat(&mut self, peer_id: &str, responded: bool) {
+    pub fn record_heartbeat(&mut self, peer_id: &Id, responded: bool) {
         if let Some(peer) = self.peers.get_mut(peer_id) {
             peer.heartbeats_total += 1;
 
@@ -172,14 +174,14 @@ impl ReputationNode {
     }
 
     /// Record that a peer contributed `units` of data/messages to us.
-    pub fn record_contribution(&mut self, peer_id: &str, units: u32) {
+    pub fn record_contribution(&mut self, peer_id: &Id, units: u32) {
         if let Some(peer) = self.peers.get_mut(peer_id) {
             peer.contributions += 1;
         }
     }
 
     /// Record that a peer consumed `units` from us.
-    pub fn record_consumption(&mut self, peer_id: &str, units: u32) {
+    pub fn record_consumption(&mut self, peer_id: &Id, units: u32) {
         if let Some(peer) = self.peers.get_mut(peer_id) {
             peer.consumptions += 1;
         }
@@ -207,7 +209,7 @@ impl ReputationNode {
     ///     group's share of total weighted votes (0.0 to 1.0)
     pub fn weighted_majority_vote(
         &self,
-        votes: &HashMap<String, u64>,
+        votes: &HashMap<Id, u64>,
         verbose: bool,
     ) -> (Option<u64>, f64) {
         if votes.is_empty() {
@@ -312,11 +314,12 @@ mod test {
     use std::collections::HashMap;
 
     use crate::algorithms::reputation::ReputationNode;
+    use crate::node::Id;
 
     #[test]
     fn new_peer_neutral_trust() {
-        let mut node = ReputationNode::new("node-a".to_owned());
-        node.add_peer("node-b".to_owned());
+        let mut node = ReputationNode::new(Id::new("node-a".to_owned()));
+        node.add_peer(Id::new("node-b".to_owned()));
 
         let ranked = node.get_ranked_peers();
         assert_eq!(ranked.len(), 1);
@@ -327,11 +330,11 @@ mod test {
 
     #[test]
     fn accurate_peer_gains_trust() {
-        let mut node = ReputationNode::new("node-a".to_owned());
-        node.add_peer("node-b".to_owned());
+        let mut node = ReputationNode::new(Id::new("node-a".to_owned()));
+        node.add_peer(Id::new("node-b".to_owned()));
 
         for _ in 0..10 {
-            node.record_report("node-b", true);
+            node.record_report(&Id::new("node-b".to_owned()), true);
         }
 
         node.update_all_scores();
@@ -343,11 +346,11 @@ mod test {
 
     #[test]
     fn inaccurate_peer_loses_trust() {
-        let mut node = ReputationNode::new("node-a".to_owned());
-        node.add_peer("node-b".to_owned());
+        let mut node = ReputationNode::new(Id::new("node-a".to_owned()));
+        node.add_peer(Id::new("node-b".to_owned()));
 
         for _ in 0..10 {
-            node.record_report("node-b", false);
+            node.record_report(&Id::new("node-b".to_owned()), false);
         }
 
         node.update_all_scores();
@@ -359,38 +362,41 @@ mod test {
 
     #[test]
     fn ranking_order() {
-        let mut node = ReputationNode::new("node-a".to_owned());
-        node.add_peer("node-b".to_owned());
-        node.add_peer("node-c".to_owned());
+        let mut node = ReputationNode::new(Id::new("node-a".to_owned()));
+        node.add_peer(Id::new("node-b".to_owned()));
+        node.add_peer(Id::new("node-c".to_owned()));
 
         for _ in 0..10 {
-            node.record_report("node-b", true);
-            node.record_report("node-c", false);
+            node.record_report(&Id::new("node-b".to_owned()), true);
+            node.record_report(&Id::new("node-c".to_owned()), false);
         }
 
         node.update_all_scores();
 
         let ranked = node.get_ranked_peers();
-        assert_eq!(ranked[0].node_id, "node-b");
-        assert_eq!(ranked[ranked.len() - 1].node_id, "node-c");
+        assert_eq!(ranked[0].node_id, Id::new("node-b".to_owned()));
+        assert_eq!(
+            ranked[ranked.len() - 1].node_id,
+            Id::new("node-c".to_owned())
+        );
     }
 
     #[test]
     fn weighted_vote_honest_beats_liar() {
-        let mut node = ReputationNode::new("node-a".to_owned());
-        node.add_peer("node-b".to_owned());
-        node.add_peer("node-c".to_owned());
+        let mut node = ReputationNode::new(Id::new("node-a".to_owned()));
+        node.add_peer(Id::new("node-b".to_owned()));
+        node.add_peer(Id::new("node-c".to_owned()));
 
         for _ in 0..10 {
-            node.record_report("node-b", true);
-            node.record_report("node-c", false);
+            node.record_report(&Id::new("node-b".to_owned()), true);
+            node.record_report(&Id::new("node-c".to_owned()), false);
         }
 
         node.update_all_scores();
 
         let mut votes = HashMap::new();
-        let _: Option<u64> = votes.insert("node-b".to_owned(), 100);
-        let _: Option<u64> = votes.insert("node-c".to_owned(), 9999);
+        let _: Option<u64> = votes.insert(Id::new("node-b".to_owned()), 100);
+        let _: Option<u64> = votes.insert(Id::new("node-c".to_owned()), 9999);
 
         let (result, confidence) = node.weighted_majority_vote(&votes, false);
 
@@ -401,9 +407,13 @@ mod test {
 
     #[test]
     fn confidence_higher_when_unanimous() {
-        let mut node = ReputationNode::new("node-a".to_owned());
+        let mut node = ReputationNode::new(Id::new("node-a".to_owned()));
 
-        for peer in ["node-b", "node-c", "node-d"] {
+        for peer in [
+            &Id::new("node-b".to_owned()),
+            &Id::new("node-c".to_owned()),
+            &Id::new("node-d".to_owned()),
+        ] {
             node.add_peer(peer.to_owned());
             node.record_report(peer, true);
         }
@@ -411,14 +421,20 @@ mod test {
         node.update_all_scores();
 
         let mut unaninmous_votes = HashMap::new();
-        let _: Option<u64> = unaninmous_votes.insert("node-b".to_owned(), 100);
-        let _: Option<u64> = unaninmous_votes.insert("node-c".to_owned(), 100);
-        let _: Option<u64> = unaninmous_votes.insert("node-d".to_owned(), 100);
+        let _: Option<u64> =
+            unaninmous_votes.insert(Id::new("node-b".to_owned()), 100);
+        let _: Option<u64> =
+            unaninmous_votes.insert(Id::new("node-c".to_owned()), 100);
+        let _: Option<u64> =
+            unaninmous_votes.insert(Id::new("node-d".to_owned()), 100);
 
         let mut split_votes = HashMap::new();
-        let _: Option<u64> = split_votes.insert("node-b".to_owned(), 100);
-        let _: Option<u64> = split_votes.insert("node-c".to_owned(), 100);
-        let _: Option<u64> = split_votes.insert("node-d".to_owned(), 999);
+        let _: Option<u64> =
+            split_votes.insert(Id::new("node-b".to_owned()), 100);
+        let _: Option<u64> =
+            split_votes.insert(Id::new("node-c".to_owned()), 100);
+        let _: Option<u64> =
+            split_votes.insert(Id::new("node-d".to_owned()), 999);
 
         let (_, unanimous_confidence) =
             node.weighted_majority_vote(&unaninmous_votes, false);
@@ -431,18 +447,18 @@ mod test {
 
     #[test]
     fn heartbeat_uptime_affects_trust() {
-        let mut node = ReputationNode::new("node-a".to_owned());
-        node.add_peer("node-reliable".to_owned());
-        node.add_peer("node-offline".to_owned());
+        let mut node = ReputationNode::new(Id::new("node-a".to_owned()));
+        node.add_peer(Id::new("node-reliable".to_owned()));
+        node.add_peer(Id::new("node-offline".to_owned()));
 
         for _ in 0..10 {
-            node.record_heartbeat("node-reliable", true);
-            node.record_heartbeat("node-offline", false);
+            node.record_heartbeat(&Id::new("node-reliable".to_owned()), true);
+            node.record_heartbeat(&Id::new("node-offline".to_owned()), false);
         }
 
         node.update_all_scores();
 
-        let ids: Vec<String> = node
+        let ids: Vec<Id> = node
             .get_ranked_peers()
             .into_iter()
             .map(|record| record.node_id)
@@ -450,6 +466,6 @@ mod test {
 
         let best_id = ids.first().unwrap();
 
-        assert_eq!(best_id, "node-reliable");
+        assert_eq!(*best_id, Id::new("node-reliable".to_owned()));
     }
 }

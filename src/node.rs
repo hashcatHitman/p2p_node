@@ -9,12 +9,14 @@
 //!   run() polls SQS every few seconds, calls handle_message() for each
 //!   received message, then calls run_periodic_tasks() for timers.
 
+use core::fmt::{self, Display};
 use core::str::FromStr as _;
 use std::collections::HashMap;
 use std::fs::File;
 use std::{io, time};
 
 use aws_sdk_sqs::Client;
+use jiff::fmt::strtime::Display as _;
 use rand::seq::IteratorRandom as _;
 use serde_json::{Map, Value};
 
@@ -25,10 +27,31 @@ use crate::algorithms::heartbeat::HeartbeatNode;
 use crate::algorithms::reputation::ReputationNode;
 use crate::protocol::{self, MessageKind};
 
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Default, Hash)]
+pub struct Id {
+    node_id: String,
+}
+
+impl Id {
+    pub const fn new(node_id: String) -> Self {
+        Self { node_id }
+    }
+
+    pub fn as_str(&self) -> &str {
+        &self.node_id
+    }
+}
+
+impl Display for Id {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.node_id)
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct SqsTransport {
     sqs: Client,
-    queue_url_cache: HashMap<String, String>,
+    queue_url_cache: HashMap<Id, String>,
 }
 
 impl SqsTransport {
@@ -53,19 +76,22 @@ impl SqsTransport {
             .flatten();
 
         if let Some(cache) = cache {
-            self.queue_url_cache = cache;
+            self.queue_url_cache = cache
+                .into_iter()
+                .map(|(id, url)| (Id::new(id), url))
+                .collect();
             true
         } else {
             false
         }
     }
 
-    pub async fn get_queue_url(&mut self, node_id: String) -> Option<String> {
+    pub async fn get_queue_url(&mut self, node_id: Id) -> Option<String> {
         if let Some(url) = self.queue_url_cache.get(&node_id) {
             return Some(url.clone());
         }
 
-        let request = self.sqs.get_queue_url().queue_name(&node_id);
+        let request = self.sqs.get_queue_url().queue_name(node_id.as_str());
 
         request
             .send()
@@ -78,11 +104,7 @@ impl SqsTransport {
             })
     }
 
-    pub async fn send(
-        &mut self,
-        target_node_id: String,
-        message: Value,
-    ) -> bool {
+    pub async fn send(&mut self, target_node_id: Id, message: Value) -> bool {
         if let Some(url) = self.get_queue_url(target_node_id.clone()).await {
             match self
                 .sqs
@@ -104,7 +126,7 @@ impl SqsTransport {
 
     pub async fn receive(
         &mut self,
-        node_id: String,
+        node_id: Id,
         max_messages: i32,
         wait_seconds: i32,
     ) -> Vec<Map<String, Value>> {
@@ -147,7 +169,7 @@ impl SqsTransport {
         messages
     }
 
-    pub async fn delete(&mut self, node_id: String, receipt_handle: String) {
+    pub async fn delete(&mut self, node_id: Id, receipt_handle: String) {
         if let Some(url) = self.get_queue_url(node_id.clone()).await {
             self.sqs
                 .delete_message()
@@ -161,7 +183,7 @@ impl SqsTransport {
 
 #[derive(Debug, Clone)]
 pub struct P2PNode {
-    node_id: String,
+    node_id: Id,
     verbose: bool,
     running: bool,
     transport: SqsTransport,
@@ -170,7 +192,7 @@ pub struct P2PNode {
     heartbeat: HeartbeatNode,
     choking: ChokingNode,
     reputation: ReputationNode,
-    view_events: HashMap<String, HashMap<String, ViewEvent>>,
+    view_events: HashMap<String, HashMap<Id, ViewEvent>>,
     view_counts: HashMap<&'static str, u64>,
     gossip_interval: u16,
     heartbeat_interval: u16,
@@ -191,7 +213,7 @@ pub struct P2PNode {
 }
 
 impl P2PNode {
-    pub async fn new(node_id: String, verbose: bool, sqs: Client) -> Self {
+    pub async fn new(node_id: Id, verbose: bool, sqs: Client) -> Self {
         let mut transport = SqsTransport::new(sqs);
         let disk_cache = File::open("resources.json").unwrap();
         let _: bool = transport.load_resources(disk_cache);
@@ -240,18 +262,18 @@ impl P2PNode {
         this
     }
 
-    pub async fn bootstrap(&mut self, bootstrap_nodes: Option<Vec<String>>) {
+    pub async fn bootstrap(&mut self, bootstrap_nodes: Option<Vec<Id>>) {
         let bootstrap_nodes = bootstrap_nodes.unwrap_or_else(|| {
             vec![
-                "bot-alpha".to_owned(),
-                "bot-bravo".to_owned(),
-                "bot-charlie".to_owned(),
+                Id::new("bot-alpha".to_owned()),
+                Id::new("bot-bravo".to_owned()),
+                Id::new("bot-charlie".to_owned()),
             ]
         });
         self.log(&format!("Bootstrapping via {bootstrap_nodes:?}..."));
 
         let hi = protocol::hello(
-            self.node_id.clone(),
+            &self.node_id,
             self.queue_url.clone().unwrap_or_default(),
         );
         for node in bootstrap_nodes {
@@ -261,14 +283,19 @@ impl P2PNode {
     }
 
     pub fn handle_message(&mut self, message: &Map<String, Value>) {
-        let node_id = message.get("sender").and_then(Value::as_str).unwrap();
+        let node_id = message
+            .get("sender")
+            .and_then(Value::as_str)
+            .map(ToOwned::to_owned)
+            .map(Id::new)
+            .unwrap();
         let message_type = message.get("type").and_then(Value::as_str).unwrap();
         if node_id == self.node_id {
             return;
         }
         self.messages_received += 1;
 
-        if let Some(sender) = self.gossip.peers_mut().get_mut(node_id) {
+        if let Some(sender) = self.gossip.peers_mut().get_mut(&node_id) {
             *sender.time_to_live_mut() = 5;
         }
 
@@ -290,33 +317,41 @@ impl P2PNode {
     }
 
     pub fn handle_hello(&mut self, message: &Map<String, Value>) {
-        let node_id = message.get("sender").and_then(Value::as_str).unwrap();
+        let node_id = message
+            .get("sender")
+            .and_then(Value::as_str)
+            .map(ToOwned::to_owned)
+            .map(Id::new)
+            .unwrap();
         let queue_url =
             message.get("queue_url").and_then(Value::as_str).unwrap();
         self.log(&format!("Got a hello from: {node_id}"));
-        self.gossip
-            .add_peer(node_id.to_owned(), queue_url.to_owned());
-        self.heartbeat.add_peer(node_id.to_owned());
-        self.choking.add_peer(node_id.to_owned(), true);
-        self.reputation.add_peer(node_id.to_owned());
+        self.gossip.add_peer(node_id.clone(), queue_url.to_owned());
+        self.heartbeat.add_peer(node_id.clone());
+        self.choking.add_peer(node_id.clone(), true);
+        self.reputation.add_peer(node_id.clone());
 
         drop(
             self.transport
                 .queue_url_cache
-                .insert(node_id.to_owned(), queue_url.to_owned()),
+                .insert(node_id.clone(), queue_url.to_owned()),
         );
 
         let plist = protocol::peer_list(
-            self.node_id.clone(),
+            &self.node_id,
             &self.gossip.get_peer_list_message(),
         );
 
-        self.transport
-            .send(node_id.to_owned(), Value::Object(plist));
+        self.transport.send(node_id, Value::Object(plist));
     }
 
     pub fn handle_peer_list(&mut self, message: &Map<String, Value>) {
-        let sender_id = message.get("sender").and_then(Value::as_str).unwrap();
+        let sender_id = message
+            .get("sender")
+            .and_then(Value::as_str)
+            .map(ToOwned::to_owned)
+            .map(Id::new)
+            .unwrap();
         let incoming_lol = message.get("peers").unwrap();
         let incoming: Vec<Value> = message
             .get("peers")
@@ -325,7 +360,7 @@ impl P2PNode {
             .unwrap()
             .clone();
         self.log(&format!("Got a peer list from: {sender_id}"));
-        let _: u8 = self.gossip.receive_peer_list(incoming, sender_id);
+        let _: u8 = self.gossip.receive_peer_list(incoming, &sender_id);
 
         for (peer, record) in self.gossip.peers() {
             self.heartbeat.add_peer(peer.clone());
@@ -340,7 +375,12 @@ impl P2PNode {
     }
 
     pub fn handle_ping(&mut self, message: &Map<String, Value>) {
-        let node_id = message.get("sender").and_then(Value::as_str).unwrap();
+        let node_id = message
+            .get("sender")
+            .and_then(Value::as_str)
+            .map(ToOwned::to_owned)
+            .map(Id::new)
+            .unwrap();
         #[expect(
             clippy::cast_possible_truncation,
             reason = "I have yet to find any good reason for this to even be
@@ -350,15 +390,20 @@ impl P2PNode {
             message.get("seq").map(|s| s.as_u64().unwrap()).unwrap() as u16;
         self.log(&format!("Got a ping from: {node_id} (#{seq})"));
 
-        let response = protocol::pong(node_id.to_owned(), seq);
+        let response = protocol::pong(&node_id.clone(), seq);
         self.transport
-            .send(node_id.to_owned(), Value::Object(response));
-        self.choking.record_contribution(node_id, 1);
-        self.reputation.record_contribution(node_id, 1);
+            .send(node_id.clone(), Value::Object(response));
+        self.choking.record_contribution(&node_id, 1);
+        self.reputation.record_contribution(&node_id, 1);
     }
 
     pub fn handle_pong(&mut self, message: &Map<String, Value>) {
-        let node_id = message.get("sender").and_then(Value::as_str).unwrap();
+        let node_id = message
+            .get("sender")
+            .and_then(Value::as_str)
+            .map(ToOwned::to_owned)
+            .map(Id::new)
+            .unwrap();
         #[expect(
             clippy::cast_possible_truncation,
             reason = "I have yet to find any good reason for this to even be
@@ -368,12 +413,17 @@ impl P2PNode {
             message.get("seq").map(|s| s.as_u64().unwrap()).unwrap() as u16;
         self.log(&format!("Got a pong from: {node_id} (#{seq})"));
 
-        self.heartbeat.receive_pong(node_id, seq.into());
-        self.reputation.record_heartbeat(node_id, true);
+        self.heartbeat.receive_pong(&node_id, seq.into());
+        self.reputation.record_heartbeat(&node_id, true);
     }
 
     pub fn handle_view_event(&mut self, message: &Map<String, Value>) {
-        let node_id = message.get("sender").and_then(Value::as_str).unwrap();
+        let node_id = message
+            .get("sender")
+            .and_then(Value::as_str)
+            .map(ToOwned::to_owned)
+            .map(Id::new)
+            .unwrap();
         let event_id = message
             .get("event_id")
             .and_then(Value::as_str)
@@ -391,7 +441,7 @@ impl P2PNode {
             .map(ToOwned::to_owned)
             .filter(|inner| !inner.is_empty());
         let view_event = ViewEvent::new(
-            node_id.to_owned(),
+            node_id.clone(),
             event_id,
             content_id.clone(),
             count,
@@ -400,21 +450,26 @@ impl P2PNode {
         self.log(&format!("View event from {node_id}: {view_event:?}"));
         match self.view_events.get_mut(&content_id) {
             Some(map) => {
-                drop(map.insert(node_id.to_owned(), view_event));
+                drop(map.insert(node_id.clone(), view_event));
             }
             None => {
                 drop(self.view_events.insert(
                     content_id,
-                    HashMap::from_iter([(node_id.to_owned(), view_event)]),
+                    HashMap::from_iter([(node_id.clone(), view_event)]),
                 ));
             }
         }
-        self.choking.record_contribution(node_id, 1);
-        self.reputation.record_contribution(node_id, 1);
+        self.choking.record_contribution(&node_id, 1);
+        self.reputation.record_contribution(&node_id, 1);
     }
 
     pub fn handle_audit_result(&mut self, message: &Map<String, Value>) {
-        let node_id = message.get("sender").and_then(Value::as_str).unwrap();
+        let node_id = message
+            .get("sender")
+            .and_then(Value::as_str)
+            .map(ToOwned::to_owned)
+            .map(Id::new)
+            .unwrap();
 
         let content_id =
             message.get("content_id").and_then(Value::as_str).unwrap();
@@ -434,7 +489,7 @@ impl P2PNode {
             views, {confidence:.2}% confidence, as voted by {voters:?}"
         );
         self.log(&log);
-        self.reputation.record_contribution(node_id, 1);
+        self.reputation.record_contribution(&node_id, 1);
     }
 
     pub fn handle_choke(&self, message: &Map<String, Value>) {
@@ -496,7 +551,7 @@ impl P2PNode {
     pub fn do_gossip(&mut self) {
         if let Some(target) = self.gossip.pick_gossip_target() {
             let peers = self.gossip.get_peer_list_message();
-            let message = protocol::peer_list(self.node_id.clone(), &peers);
+            let message = protocol::peer_list(&self.node_id, &peers);
             self.transport.send(target.clone(), Value::Object(message));
             self.log(&format!("Sent gossip to: {target}"));
         }
@@ -504,7 +559,7 @@ impl P2PNode {
 
     pub fn do_heartbeat(&mut self) {
         self.ping_seq += 1;
-        let ping = protocol::ping(self.node_id.clone(), self.ping_seq);
+        let ping = protocol::ping(&self.node_id, self.ping_seq);
         for peer in self.heartbeat.send_pings(self.rounds) {
             self.transport
                 .send(peer.clone(), Value::Object(ping.clone()));
@@ -547,7 +602,7 @@ impl P2PNode {
                     "Publishing: {event_id}, {key}, {count_freeze}"
                 ));
                 let message = protocol::view_event(
-                    self.node_id.clone(),
+                    &self.node_id,
                     event_id,
                     key.to_owned(),
                     count_freeze,
@@ -570,7 +625,7 @@ impl P2PNode {
             .choose(&mut rand::rng())
         {
             Some((content_id, events)) => {
-                let votes: HashMap<String, u64> = events
+                let votes: HashMap<Id, u64> = events
                     .iter()
                     .map(|(peer_id, view_event)| {
                         (peer_id.clone(), view_event.count())
@@ -587,11 +642,11 @@ impl P2PNode {
                             self.reputation
                                 .record_report(peer_id, was_accurate);
                         }
-                        let voter_ids: Vec<String> =
+                        let voter_ids: Vec<Id> =
                             votes.keys().cloned().collect();
 
                         let message = protocol::audit_result(
-                            self.node_id.clone(),
+                            &self.node_id,
                             content_id.clone(),
                             count,
                             confidence,

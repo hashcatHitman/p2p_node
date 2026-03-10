@@ -16,7 +16,7 @@
 )]
 
 use aws_sdk_sqs as sqs;
-use p2p_node::node::P2PNode;
+use p2p_node::node::{Id, P2PNode};
 
 /// This isn't a real project.
 ///
@@ -28,7 +28,7 @@ async fn main() -> Result<(), sqs::Error> {
     let config = aws_config::load_from_env().await;
     let client = aws_sdk_sqs::Client::new(&config);
 
-    let mut node = P2PNode::new("sam".to_owned(), true, client).await;
+    let mut node = P2PNode::new(Id::new("sam".to_owned()), true, client).await;
 
     node.bootstrap(None).await;
 
