@@ -15,6 +15,7 @@ use std::fs::File;
 use std::{io, time};
 
 use aws_sdk_sqs::Client;
+use rand::seq::IteratorRandom as _;
 use serde_json::{Map, Value};
 
 use crate::algorithms::choking::ChokingNode;
@@ -170,14 +171,17 @@ pub struct P2PNode {
     choking: ChokingNode,
     reputation: ReputationNode,
     view_events: Vec<ViewEvent>,
+    view_counts: HashMap<&'static str, u64>,
     gossip_interval: u16,
     heartbeat_interval: u16,
     choking_interval: u16,
     reputation_interval: u16,
+    publish_interval: u16,
     last_gossip: time::Instant,
     last_heartbeat: time::Instant,
     last_choking: time::Instant,
     last_reputation: time::Instant,
+    last_publish: time::Instant,
     ping_seq: u16,
     messages_received: u32,
     messages_sent: u32,
@@ -205,14 +209,21 @@ impl P2PNode {
             choking: ChokingNode::new(node_id.clone(), 4, 3),
             reputation: ReputationNode::new(node_id),
             view_events: Vec::new(),
+            view_counts: HashMap::from_iter([
+                ("show:midnight-run", 0),
+                ("show:neon-drift", 0),
+                ("show:binary-sunset", 0),
+            ]),
             gossip_interval: 15,
             heartbeat_interval: 10,
             choking_interval: 30,
             reputation_interval: 30,
+            publish_interval: 15,
             last_gossip: time::Instant::now(),
             last_heartbeat: time::Instant::now(),
             last_choking: time::Instant::now(),
             last_reputation: time::Instant::now(),
+            last_publish: time::Instant::now(),
             ping_seq: 0,
             messages_received: 0,
             messages_sent: 0,
@@ -446,6 +457,13 @@ impl P2PNode {
             self.do_reputation();
             self.last_reputation = now;
         }
+
+        if now - self.last_publish
+            >= time::Duration::from_secs(self.publish_interval.into())
+        {
+            self.do_publish();
+            self.last_publish = now;
+        }
     }
 
     pub fn do_gossip(&mut self) {
@@ -480,6 +498,45 @@ impl P2PNode {
     pub fn do_reputation(&mut self) {
         self.reputation.update_all_scores();
         self.log("Updated scores");
+    }
+
+    pub fn do_publish(&mut self) {
+        match self.view_counts.iter_mut().choose(&mut rand::rng()) {
+            Some((&key, count)) => {
+                *count += 1;
+
+                let event_id = match *uuid::Uuid::new_v4().as_bytes() {
+                    [.., b0, b1, b2, b3] => {
+                        format!(
+                            "{}-{b0:02x}{b1:02x}{b2:02x}{b3:02x}",
+                            self.node_id
+                        )
+                    }
+                };
+
+                #[expect(
+                    clippy::cast_possible_truncation,
+                    reason = "todo: just make the counts u64 everywhere"
+                )]
+                let count_freeze = *count as u32;
+
+                self.log(&format!(
+                    "Publishing: {event_id}, {key}, {count_freeze}"
+                ));
+                let message = protocol::view_event(
+                    self.node_id.clone(),
+                    event_id,
+                    key.to_owned(),
+                    count_freeze,
+                    String::new(),
+                );
+
+                for peer in self.heartbeat.get_alive_peers() {
+                    self.transport.send(peer, Value::Object(message.clone()));
+                }
+            }
+            None => self.log("Failed to publish: no known content"),
+        }
     }
 
     pub async fn run(&mut self) {
