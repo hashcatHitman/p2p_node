@@ -16,6 +16,7 @@
 //!   5. reputation  - Trust scoring and weighted voting
 
 pub mod choking;
+pub mod content;
 pub mod gossip;
 pub mod heartbeat;
 pub mod reputation;
