@@ -65,7 +65,7 @@ impl SqsTransport {
             return Some(url.clone());
         }
 
-        let request = self.sqs.get_queue_url().queue_name("todo!()");
+        let request = self.sqs.get_queue_url().queue_name(&node_id);
 
         request
             .send()
