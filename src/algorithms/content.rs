@@ -6,6 +6,7 @@
 
 #[derive(Debug, Clone)]
 pub struct ViewEvent {
+    peer_id: String,
     event_id: String,
     content_id: String,
     count: u64,
@@ -14,17 +15,23 @@ pub struct ViewEvent {
 
 impl ViewEvent {
     pub const fn new(
+        peer_id: String,
         event_id: String,
         content_id: String,
         count: u64,
         ad_id: Option<String>,
     ) -> Self {
         Self {
+            peer_id,
             event_id,
             content_id,
             count,
             ad_id,
         }
+    }
+
+    pub fn peer_id(&self) -> &str {
+        &self.peer_id
     }
 
     pub fn event_id(&self) -> &str {
