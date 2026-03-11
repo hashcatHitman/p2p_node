@@ -28,7 +28,10 @@
 )]
 
 use aws_config as _;
+use owo_colors::OwoColorize as _;
 use tokio as _;
+
+use crate::node::Id;
 
 pub mod algorithms;
 pub mod node;
@@ -41,4 +44,40 @@ pub mod protocol;
 /// ```
 pub const fn read_a_book() -> &'static str {
     "you are so smart!!"
+}
+
+pub fn log(node_id: &Id, message: &str) {
+    let timestamp = jiff::Timestamp::now().strftime("%FT%T%.8fZ");
+    let timestamp = format!("[{timestamp}]");
+    let node_id = format!("[{node_id}]");
+    println!(
+        "{} {} {}",
+        timestamp.cyan(),
+        node_id.purple(),
+        message.white()
+    );
+}
+
+pub fn warn(node_id: &Id, message: &str) {
+    let timestamp = jiff::Timestamp::now().strftime("%FT%T%.8fZ");
+    let timestamp = format!("[{timestamp}]");
+    let node_id = format!("[{node_id}]");
+    println!(
+        "{} {} {}",
+        timestamp.cyan(),
+        node_id.purple(),
+        message.yellow()
+    );
+}
+
+pub fn error(node_id: &Id, message: &str) {
+    let timestamp = jiff::Timestamp::now().strftime("%FT%T%.8fZ");
+    let timestamp = format!("[{timestamp}]");
+    let node_id = format!("[{node_id}]");
+    println!(
+        "{} {} {}",
+        timestamp.cyan(),
+        node_id.purple(),
+        message.red()
+    );
 }

@@ -16,7 +16,7 @@ use std::fs::File;
 use std::{io, time};
 
 use aws_sdk_sqs::Client;
-use jiff::fmt::strtime::Display as _;
+use owo_colors::OwoColorize as _;
 use rand::seq::IteratorRandom as _;
 use serde_json::{Map, Value};
 
@@ -255,10 +255,13 @@ impl P2PNode {
             messages_sent: 0,
             rounds: 0,
         };
-        this.log(&format!(
-            "Initialized. Queue: {}",
-            this.queue_url.clone().unwrap_or_default()
-        ));
+        crate::log(
+            &this.node_id,
+            &format!(
+                "Initialized. Queue: {}",
+                this.queue_url.clone().unwrap_or_default()
+            ),
+        );
         this
     }
 
@@ -270,7 +273,10 @@ impl P2PNode {
                 Id::new("bot-charlie".to_owned()),
             ]
         });
-        self.log(&format!("Bootstrapping via {bootstrap_nodes:?}..."));
+        crate::log(
+            &self.node_id,
+            &format!("Bootstrapping via {bootstrap_nodes:?}..."),
+        );
 
         let hi = protocol::hello(
             &self.node_id,
@@ -311,7 +317,10 @@ impl P2PNode {
                 MessageKind::Unchoke => self.handle_unchoke(message),
             },
             Err(()) => {
-                self.log(&format!("Unknown message type: {message_type}"));
+                crate::warn(
+                    &self.node_id,
+                    &format!("Unknown message type: {message_type}"),
+                );
             }
         }
     }
@@ -325,7 +334,7 @@ impl P2PNode {
             .unwrap();
         let queue_url =
             message.get("queue_url").and_then(Value::as_str).unwrap();
-        self.log(&format!("Got a hello from: {node_id}"));
+        crate::log(&self.node_id, &format!("Got a hello from: {node_id}"));
         self.gossip.add_peer(node_id.clone(), queue_url.to_owned());
         self.heartbeat.add_peer(node_id.clone());
         self.choking.add_peer(node_id.clone(), true);
@@ -359,7 +368,10 @@ impl P2PNode {
             .unwrap()
             .unwrap()
             .clone();
-        self.log(&format!("Got a peer list from: {sender_id}"));
+        crate::log(
+            &self.node_id,
+            &format!("Got a peer list from: {sender_id}"),
+        );
         let _: u8 = self.gossip.receive_peer_list(incoming, &sender_id);
 
         for (peer, record) in self.gossip.peers() {
@@ -388,7 +400,10 @@ impl P2PNode {
         )]
         let seq =
             message.get("seq").map(|s| s.as_u64().unwrap()).unwrap() as u16;
-        self.log(&format!("Got a ping from: {node_id} (#{seq})"));
+        crate::log(
+            &self.node_id,
+            &format!("Got a ping from: {node_id} (#{seq})"),
+        );
 
         let response = protocol::pong(&node_id.clone(), seq);
         self.transport
@@ -411,7 +426,10 @@ impl P2PNode {
         )]
         let seq: u16 =
             message.get("seq").map(|s| s.as_u64().unwrap()).unwrap() as u16;
-        self.log(&format!("Got a pong from: {node_id} (#{seq})"));
+        crate::log(
+            &self.node_id,
+            &format!("Got a pong from: {node_id} (#{seq})"),
+        );
 
         self.heartbeat.receive_pong(&node_id, seq.into());
         self.reputation.record_heartbeat(&node_id, true);
@@ -447,7 +465,10 @@ impl P2PNode {
             count,
             ad_id,
         );
-        self.log(&format!("View event from {node_id}: {view_event:?}"));
+        crate::log(
+            &self.node_id,
+            &format!("View event from {node_id}: {view_event:?}"),
+        );
         match self.view_events.get_mut(&content_id) {
             Some(map) => {
                 drop(map.insert(node_id.clone(), view_event));
@@ -488,18 +509,18 @@ impl P2PNode {
             "Audit result from {node_id}: \"{content_id}\", {agreed_count} \
             views, {confidence:.2}% confidence, as voted by {voters:?}"
         );
-        self.log(&log);
+        crate::log(&self.node_id, &log);
         self.reputation.record_contribution(&node_id, 1);
     }
 
     pub fn handle_choke(&self, message: &Map<String, Value>) {
         let node_id = message.get("sender").and_then(Value::as_str).unwrap();
-        self.log(&format!("Choked by {node_id}"));
+        crate::log(&self.node_id, &format!("Choked by {node_id}"));
     }
 
     pub fn handle_unchoke(&self, message: &Map<String, Value>) {
         let node_id = message.get("sender").and_then(Value::as_str).unwrap();
-        self.log(&format!("Unchoked by {node_id}"));
+        crate::log(&self.node_id, &format!("Unchoked by {node_id}"));
     }
 
     pub fn run_periodic_tasks(&mut self) {
@@ -553,7 +574,7 @@ impl P2PNode {
             let peers = self.gossip.get_peer_list_message();
             let message = protocol::peer_list(&self.node_id, &peers);
             self.transport.send(target.clone(), Value::Object(message));
-            self.log(&format!("Sent gossip to: {target}"));
+            crate::log(&self.node_id, &format!("Sent gossip to: {target}"));
         }
     }
 
@@ -563,23 +584,23 @@ impl P2PNode {
         for peer in self.heartbeat.send_pings(self.rounds) {
             self.transport
                 .send(peer.clone(), Value::Object(ping.clone()));
-            self.log(&format!(
-                "Sent heartbeat to: {peer} (#{})",
-                self.ping_seq
-            ));
+            crate::log(
+                &self.node_id,
+                &format!("Sent heartbeat to: {peer} (#{})", self.ping_seq),
+            );
         }
     }
 
     pub fn do_choking(&mut self) {
         self.choking.run_choking_round();
         for log in self.choking.flush_log() {
-            self.log(&log);
+            crate::log(&self.node_id, &log);
         }
     }
 
     pub fn do_reputation(&mut self) {
         self.reputation.update_all_scores();
-        self.log("Updated scores");
+        crate::log(&self.node_id, "Updated scores");
     }
 
     pub fn do_publish(&mut self) {
@@ -598,9 +619,10 @@ impl P2PNode {
 
                 let count_freeze = *count;
 
-                self.log(&format!(
-                    "Publishing: {event_id}, {key}, {count_freeze}"
-                ));
+                crate::log(
+                    &self.node_id,
+                    &format!("Publishing: {event_id}, {key}, {count_freeze}"),
+                );
                 let message = protocol::view_event(
                     &self.node_id,
                     event_id,
@@ -613,7 +635,10 @@ impl P2PNode {
                     self.transport.send(peer, Value::Object(message.clone()));
                 }
             }
-            None => self.log("Failed to publish: no known content"),
+            None => crate::warn(
+                &self.node_id,
+                "Failed to publish: no known content",
+            ),
         }
     }
 
@@ -658,21 +683,27 @@ impl P2PNode {
                                 .send(peer, Value::Object(message.clone()));
                         }
                     }
-                    None => self.log("Audit failure: agreed count was None"),
+                    None => crate::warn(
+                        &self.node_id,
+                        "Audit failure: agreed count was None",
+                    ),
                 }
             }
-            None => self.log("Audit failure: no eligible content_id"),
+            None => crate::warn(
+                &self.node_id,
+                "Audit failure: no eligible content_id",
+            ),
         }
     }
 
     pub async fn run(&mut self) {
         self.running = true;
-        self.log("Starting main loop...");
-        println!("\n[{}] Node running. Press Ctrl+C to stop.", self.node_id);
+        crate::log(&self.node_id, "Starting main loop...");
+        crate::log(&self.node_id, "Node running. Press Ctrl+C to stop.");
 
         while self.running {
             self.rounds += 1;
-            self.log(&format!("Round {} starts", self.rounds));
+            crate::log(&self.node_id, &format!("Round {} starts", self.rounds));
             let messages =
                 self.transport.receive(self.node_id.clone(), 10, 5).await;
 
@@ -690,20 +721,15 @@ impl P2PNode {
             self.gossip.age_entries();
         }
 
-        self.log("Main loop exited.");
+        crate::log(&self.node_id, "Main loop exited.");
     }
 
     pub fn shutdown(&mut self) {
-        self.log("Shutting down...");
+        crate::log(&self.node_id, "Shutting down...");
         self.running = false;
     }
 
     pub fn print_status(&self) {
-        self.log("todo!: print_status");
-    }
-
-    pub fn log(&self, message: &str) {
-        let timestamp = jiff::Timestamp::now().to_string();
-        println!("[{timestamp}] [{}] {message}", self.node_id);
+        crate::error(&self.node_id, "todo!: print_status");
     }
 }
