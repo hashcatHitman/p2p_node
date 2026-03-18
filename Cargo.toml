@@ -60,6 +60,9 @@ closure_returning_async_block = "warn"
 # These are shadowed since 1.86.0
 deref_into_dyn_supertrait = "warn"
 
+# I forbid lints on purpose. I will deal with breakage if it appears.
+forbidden_lint_groups = "allow"
+
 # Unnecessary lifetime bounds add clutter, complexity, and may be a sign of user
 # error
 explicit_outlives_requirements = "warn"
