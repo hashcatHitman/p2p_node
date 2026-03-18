@@ -337,7 +337,7 @@ impl P2PNode {
         crate::log(&self.node_id, &format!("Got a hello from: {node_id}"));
         self.gossip.add_peer(node_id.clone(), queue_url.to_owned());
         self.heartbeat.add_peer(node_id.clone());
-        self.choking.add_peer(node_id.clone(), true);
+        self.choking.add_peer(node_id.clone());
         self.reputation.add_peer(node_id.clone());
 
         drop(
@@ -367,7 +367,7 @@ impl P2PNode {
 
         for (peer, record) in self.gossip.peers() {
             self.heartbeat.add_peer(peer.clone());
-            self.choking.add_peer(peer.clone(), true);
+            self.choking.add_peer(peer.clone());
             self.reputation.add_peer(peer.clone());
             drop(
                 self.transport

@@ -100,7 +100,7 @@ impl ChokingNode {
     }
 
     /// Register a new peer. New peers start choked.
-    pub fn add_peer(&mut self, node_id: Id, interested: bool) {
+    pub fn add_peer(&mut self, node_id: Id) {
         if !self.peers.contains_key(&node_id) {
             drop(
                 self.peers
@@ -253,8 +253,8 @@ mod test {
     #[test]
     fn new_peer_starts_choked() {
         let mut node = ChokingNode::new(Id::new("node-a".to_owned()), 2, 3);
-        node.add_peer(Id::new("node-b".to_owned()), true);
-        node.add_peer(Id::new("node-c".to_owned()), true);
+        node.add_peer(Id::new("node-b".to_owned()));
+        node.add_peer(Id::new("node-c".to_owned()));
         let unchoked = node.get_unchoked_peers();
         assert!(!unchoked.contains(&Id::new("node-b".to_owned())));
     }
@@ -262,8 +262,8 @@ mod test {
     #[test]
     fn top_contributor_gets_unchoked() {
         let mut node = ChokingNode::new(Id::new("node-a".to_owned()), 1, 999);
-        node.add_peer(Id::new("node-b".to_owned()), true);
-        node.add_peer(Id::new("node-c".to_owned()), true);
+        node.add_peer(Id::new("node-b".to_owned()));
+        node.add_peer(Id::new("node-c".to_owned()));
 
         for _ in 0..10 {
             node.record_contribution(&Id::new("node-b".to_owned()), 5);
@@ -286,7 +286,7 @@ mod test {
             &Id::new("node-d".to_owned()),
             &Id::new("node-e".to_owned()),
         ] {
-            node.add_peer(peer.clone(), true);
+            node.add_peer(peer.clone());
             node.record_contribution(peer, 1);
         }
 
@@ -305,7 +305,7 @@ mod test {
             &Id::new("node-c".to_owned()),
             &Id::new("node-d".to_owned()),
         ] {
-            node.add_peer(peer.clone(), true);
+            node.add_peer(peer.clone());
             node.record_contribution(peer, 1);
         }
 
@@ -327,7 +327,7 @@ mod test {
             Id::new("node-c".to_owned()),
             Id::new("node-d".to_owned()),
         ] {
-            node.add_peer(peer, true);
+            node.add_peer(peer);
         }
 
         node.record_contribution(&Id::new("node-b".to_owned()), 10);
@@ -351,7 +351,7 @@ mod test {
             Id::new("node-c".to_owned()),
             Id::new("node-d".to_owned()),
         ] {
-            node.add_peer(peer, true);
+            node.add_peer(peer);
         }
 
         node.run_choking_round();
