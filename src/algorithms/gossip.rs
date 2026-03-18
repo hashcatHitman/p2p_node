@@ -29,6 +29,7 @@ use rand::seq::IteratorRandom as _;
 use serde_json::json;
 
 use crate::node::Id;
+use crate::protocol::Peer;
 
 /// A single known peer in the gossip table.
 #[derive(Debug, Clone)]
@@ -155,47 +156,28 @@ impl GossipNode {
     ///    Number of new peers discovered (not previously in our table).
     pub fn receive_peer_list(
         &mut self,
-        incoming: Vec<serde_json::Value>,
+        incoming: &[Peer],
         sender_id: &Id,
     ) -> u8 {
         let mut new_count: u8 = 0;
 
         for entry in incoming {
-            let node_id = entry
-                .get("node_id")
-                .and_then(|v| v.as_str().map(ToOwned::to_owned))
-                .map(Id::new);
+            let node_id = entry.node_id.clone();
 
-            match node_id {
-                Some(node_id) => {
-                    if node_id == self.node_id {
-                        continue;
-                    }
+            if node_id == self.node_id {
+                continue;
+            }
 
-                    if let Some(peer) = self.peers.get_mut(&node_id) {
-                        peer.time_to_live = 5;
-                    } else {
-                        let queue_url = entry
-                            .get("queue_url")
-                            .and_then(|v| v.as_str().map(ToOwned::to_owned));
+            if let Some(peer) = self.peers.get_mut(&node_id) {
+                peer.time_to_live = 5;
+            } else {
+                let queue_url = entry.queue_url.clone();
 
-                        match queue_url {
-                            Some(queue_url) => {
-                                drop(self.peers.insert(
-                                    node_id.clone(),
-                                    PeerEntry::new(node_id, queue_url),
-                                ));
-                                new_count += 1;
-                            }
-                            None => eprintln!(
-                                "[WARNING]: Found no queue_url for {node_id} when receiving peer list from {sender_id}"
-                            ),
-                        }
-                    }
-                }
-                None => eprintln!(
-                    "[WARNING]: Found no node_id when receiving peer list from {sender_id}"
-                ),
+                drop(self.peers.insert(
+                    node_id.clone(),
+                    PeerEntry::new(node_id, queue_url),
+                ));
+                new_count += 1;
             }
         }
         new_count
@@ -254,6 +236,7 @@ mod test {
 
     use crate::algorithms::gossip::GossipNode;
     use crate::node::Id;
+    use crate::protocol::Peer;
 
     #[test]
     fn add_peer_increases_count() {
@@ -336,11 +319,13 @@ mod test {
             Id::new("node-b".to_owned()),
             "https://sqs.fake/b".to_owned(),
         );
-        let incoming = vec![
-            json!({"node_id": "node-c", "queue_url": "https://sqs.fake/c"}),
-        ];
+        let incoming = [Peer {
+            node_id: Id::new("node-c".to_owned()),
+            queue_url: "https://sqs.fake/c".to_owned(),
+        }];
+
         let new =
-            node.receive_peer_list(incoming, &Id::new("node-b".to_owned()));
+            node.receive_peer_list(&incoming, &Id::new("node-b".to_owned()));
         assert!(node.known_peer_count() >= 2);
         assert_eq!(new, 1);
     }
@@ -353,11 +338,12 @@ mod test {
             Id::new("node-b".to_owned()),
             "https://sqs.fake/b".to_owned(),
         );
-        let incoming = vec![
-            json!({"node_id": "node-b", "queue_url": "https://sqs.fake/b"}),
-        ];
+        let incoming = [Peer {
+            node_id: Id::new("node-b".to_owned()),
+            queue_url: "https://sqs.fake/b".to_owned(),
+        }];
         let new =
-            node.receive_peer_list(incoming, &Id::new("node-b".to_owned()));
+            node.receive_peer_list(&incoming, &Id::new("node-b".to_owned()));
         assert_eq!(new, 0);
     }
 

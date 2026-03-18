@@ -7,7 +7,7 @@
 use crate::node::Id;
 
 #[derive(Debug, Clone)]
-pub struct ViewEvent {
+pub struct ViewEventRecord {
     peer_id: Id,
     event_id: String,
     content_id: String,
@@ -15,7 +15,7 @@ pub struct ViewEvent {
     ad_id: Option<String>,
 }
 
-impl ViewEvent {
+impl ViewEventRecord {
     pub const fn new(
         peer_id: Id,
         event_id: String,

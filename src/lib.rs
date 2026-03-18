@@ -19,7 +19,6 @@
     unused,
     clippy::use_debug,
     clippy::iter_over_hash_type,
-    clippy::min_ident_chars,
     clippy::arithmetic_side_effects,
     clippy::else_if_without_else,
     clippy::missing_panics_doc,

@@ -19,11 +19,23 @@ use core::fmt;
 use core::fmt::Display;
 use core::str::FromStr;
 
+use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value, json};
 
 use crate::node::Id;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(
+    Debug,
+    Clone,
+    Copy,
+    PartialEq,
+    Eq,
+    PartialOrd,
+    Ord,
+    Hash,
+    Serialize,
+    Deserialize,
+)]
 pub enum MessageKind {
     Hello,
     PeerList,
@@ -153,4 +165,747 @@ pub fn choke(sender: &Id) -> Map<String, Value> {
 
 pub fn unchoke(sender: &Id) -> Map<String, Value> {
     base(MessageKind::Unchoke, sender)
+}
+
+#[derive(
+    Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize,
+)]
+pub struct Peer {
+    pub node_id: Id,
+    pub queue_url: String,
+}
+
+#[derive(
+    Debug,
+    Clone,
+    PartialEq,
+    Eq,
+    PartialOrd,
+    Ord,
+    Default,
+    Hash,
+    Serialize,
+    Deserialize,
+)]
+pub struct Hello {
+    sender: Id,
+    timestamp: jiff::Timestamp,
+    msg_id: String,
+    queue_url: String,
+}
+
+impl Hello {
+    pub const fn sender(&self) -> &Id {
+        &self.sender
+    }
+
+    pub const fn timestamp(&self) -> jiff::Timestamp {
+        self.timestamp
+    }
+
+    pub fn msg_id(&self) -> &str {
+        &self.msg_id
+    }
+
+    pub fn queue_url(&self) -> &str {
+        &self.queue_url
+    }
+}
+
+#[derive(
+    Debug,
+    Clone,
+    PartialEq,
+    Eq,
+    PartialOrd,
+    Ord,
+    Default,
+    Hash,
+    Serialize,
+    Deserialize,
+)]
+pub struct PeerList {
+    sender: Id,
+    timestamp: jiff::Timestamp,
+    msg_id: String,
+    peers: Vec<Peer>,
+}
+
+impl PeerList {
+    pub const fn sender(&self) -> &Id {
+        &self.sender
+    }
+
+    pub const fn timestamp(&self) -> jiff::Timestamp {
+        self.timestamp
+    }
+
+    pub fn msg_id(&self) -> &str {
+        &self.msg_id
+    }
+
+    pub fn peers(&self) -> &[Peer] {
+        &self.peers
+    }
+}
+
+#[derive(
+    Debug,
+    Clone,
+    PartialEq,
+    Eq,
+    PartialOrd,
+    Ord,
+    Default,
+    Hash,
+    Serialize,
+    Deserialize,
+)]
+pub struct Ping {
+    sender: Id,
+    timestamp: jiff::Timestamp,
+    msg_id: String,
+    seq: u16,
+}
+
+impl Ping {
+    pub const fn sender(&self) -> &Id {
+        &self.sender
+    }
+
+    pub const fn timestamp(&self) -> jiff::Timestamp {
+        self.timestamp
+    }
+
+    pub fn msg_id(&self) -> &str {
+        &self.msg_id
+    }
+
+    pub const fn seq(&self) -> u16 {
+        self.seq
+    }
+}
+
+#[derive(
+    Debug,
+    Clone,
+    PartialEq,
+    Eq,
+    PartialOrd,
+    Ord,
+    Default,
+    Hash,
+    Serialize,
+    Deserialize,
+)]
+pub struct Pong {
+    sender: Id,
+    timestamp: jiff::Timestamp,
+    msg_id: String,
+    seq: u16,
+}
+
+impl Pong {
+    pub const fn sender(&self) -> &Id {
+        &self.sender
+    }
+
+    pub const fn timestamp(&self) -> jiff::Timestamp {
+        self.timestamp
+    }
+
+    pub fn msg_id(&self) -> &str {
+        &self.msg_id
+    }
+
+    pub const fn seq(&self) -> u16 {
+        self.seq
+    }
+}
+
+#[derive(
+    Debug,
+    Clone,
+    PartialEq,
+    Eq,
+    PartialOrd,
+    Ord,
+    Default,
+    Hash,
+    Serialize,
+    Deserialize,
+)]
+pub struct ViewEvent {
+    sender: Id,
+    timestamp: jiff::Timestamp,
+    msg_id: String,
+    event_id: String,
+    content_id: String,
+    count: u64,
+    ad_id: Option<String>,
+}
+
+impl ViewEvent {
+    pub const fn sender(&self) -> &Id {
+        &self.sender
+    }
+
+    pub const fn timestamp(&self) -> jiff::Timestamp {
+        self.timestamp
+    }
+
+    pub fn msg_id(&self) -> &str {
+        &self.msg_id
+    }
+
+    pub fn event_id(&self) -> &str {
+        &self.event_id
+    }
+
+    pub fn content_id(&self) -> &str {
+        &self.content_id
+    }
+
+    pub const fn count(&self) -> u64 {
+        self.count
+    }
+
+    pub fn ad_id(&self) -> Option<&str> {
+        self.ad_id.as_deref()
+    }
+}
+
+#[derive(
+    Debug, Clone, PartialEq, PartialOrd, Default, Serialize, Deserialize,
+)]
+pub struct AuditResult {
+    sender: Id,
+    timestamp: jiff::Timestamp,
+    msg_id: String,
+    content_id: String,
+    agreed_count: u64,
+    confidence: f64,
+    voters: Option<Vec<Id>>,
+}
+
+impl AuditResult {
+    pub const fn sender(&self) -> &Id {
+        &self.sender
+    }
+
+    pub const fn timestamp(&self) -> jiff::Timestamp {
+        self.timestamp
+    }
+
+    pub fn msg_id(&self) -> &str {
+        &self.msg_id
+    }
+
+    pub fn content_id(&self) -> &str {
+        &self.content_id
+    }
+
+    pub const fn agreed_count(&self) -> u64 {
+        self.agreed_count
+    }
+
+    pub const fn confidence(&self) -> f64 {
+        self.confidence
+    }
+
+    pub fn voters(&self) -> Option<&[Id]> {
+        self.voters.as_deref()
+    }
+}
+
+#[derive(
+    Debug,
+    Clone,
+    PartialEq,
+    Eq,
+    PartialOrd,
+    Ord,
+    Default,
+    Hash,
+    Serialize,
+    Deserialize,
+)]
+pub struct Choke {
+    sender: Id,
+    timestamp: jiff::Timestamp,
+    msg_id: String,
+}
+
+impl Choke {
+    pub const fn sender(&self) -> &Id {
+        &self.sender
+    }
+
+    pub const fn timestamp(&self) -> jiff::Timestamp {
+        self.timestamp
+    }
+
+    pub fn msg_id(&self) -> &str {
+        &self.msg_id
+    }
+}
+
+#[derive(
+    Debug,
+    Clone,
+    PartialEq,
+    Eq,
+    PartialOrd,
+    Ord,
+    Default,
+    Hash,
+    Serialize,
+    Deserialize,
+)]
+pub struct Unchoke {
+    sender: Id,
+    timestamp: jiff::Timestamp,
+    msg_id: String,
+}
+
+impl Unchoke {
+    pub const fn sender(&self) -> &Id {
+        &self.sender
+    }
+
+    pub const fn timestamp(&self) -> jiff::Timestamp {
+        self.timestamp
+    }
+
+    pub fn msg_id(&self) -> &str {
+        &self.msg_id
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, PartialOrd, Serialize, Deserialize)]
+#[serde(tag = "type", rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum Message {
+    Hello {
+        #[serde(flatten)]
+        message: Hello,
+    },
+    PeerList {
+        #[serde(flatten)]
+        message: PeerList,
+    },
+    Ping {
+        #[serde(flatten)]
+        message: Ping,
+    },
+    Pong {
+        #[serde(flatten)]
+        message: Pong,
+    },
+    ViewEvent {
+        #[serde(flatten)]
+        message: ViewEvent,
+    },
+    AuditResult {
+        #[serde(flatten)]
+        message: AuditResult,
+    },
+    Choke {
+        #[serde(flatten)]
+        message: Choke,
+    },
+    Unchoke {
+        #[serde(flatten)]
+        message: Unchoke,
+    },
+}
+
+impl Message {
+    pub const fn sender(&self) -> &Id {
+        match *self {
+            Self::Hello { ref message } => message.sender(),
+            Self::PeerList { ref message } => message.sender(),
+            Self::Ping { ref message } => message.sender(),
+            Self::Pong { ref message } => message.sender(),
+            Self::ViewEvent { ref message } => message.sender(),
+            Self::AuditResult { ref message } => message.sender(),
+            Self::Choke { ref message } => message.sender(),
+            Self::Unchoke { ref message } => message.sender(),
+        }
+    }
+
+    pub const fn timestamp(&self) -> jiff::Timestamp {
+        match *self {
+            Self::Hello { ref message } => message.timestamp(),
+            Self::PeerList { ref message } => message.timestamp(),
+            Self::Ping { ref message } => message.timestamp(),
+            Self::Pong { ref message } => message.timestamp(),
+            Self::ViewEvent { ref message } => message.timestamp(),
+            Self::AuditResult { ref message } => message.timestamp(),
+            Self::Choke { ref message } => message.timestamp(),
+            Self::Unchoke { ref message } => message.timestamp(),
+        }
+    }
+
+    pub fn msg_id(&self) -> &str {
+        match *self {
+            Self::Hello { ref message } => message.msg_id(),
+            Self::PeerList { ref message } => message.msg_id(),
+            Self::Ping { ref message } => message.msg_id(),
+            Self::Pong { ref message } => message.msg_id(),
+            Self::ViewEvent { ref message } => message.msg_id(),
+            Self::AuditResult { ref message } => message.msg_id(),
+            Self::Choke { ref message } => message.msg_id(),
+            Self::Unchoke { ref message } => message.msg_id(),
+        }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use serde_json::{Map, Value, json};
+
+    use crate::node::Id;
+    use crate::protocol::{
+        AuditResult, Choke, Hello, Message, MessageKind, Peer, PeerList, Ping,
+        Pong, Unchoke, ViewEvent, base, hello, peer_list,
+    };
+
+    const NINETEEN_EIGHTY_FOUR: jiff::Timestamp =
+        jiff::Timestamp::constant(441_763_200, 0);
+
+    #[test]
+    fn deserialize_hello() {
+        let json: &str = r#"
+        {
+            "type": "HELLO",
+            "sender": "alice",
+            "timestamp": "1984-01-01T00:00:00Z",
+            "msg_id": "a1b2c3d4",
+            "queue_url": "https://sqs.us-east-1.amazonaws.com/194722398367/ds2032-node-alice-p2p"
+        }"#;
+        let deserialized: Message = serde_json::from_str(json).unwrap();
+
+        let constructed: Message = Message::Hello {
+            message:Hello{
+            sender: Id::new("alice".to_owned()),
+            timestamp: NINETEEN_EIGHTY_FOUR,
+            msg_id: "a1b2c3d4".to_owned(),
+            queue_url:"https://sqs.us-east-1.amazonaws.com/194722398367/ds2032-node-alice-p2p".to_owned()}
+        };
+
+        assert_eq!(constructed, deserialized);
+    }
+
+    #[test]
+    fn deserialize_peer_list() {
+        let json = r#"
+        {
+            "type": "PEER_LIST",
+            "sender": "alice",
+            "timestamp": "1984-01-01T00:00:00Z",
+            "msg_id": "a1b2c3d4",
+            "peers": [
+                {"node_id": "bob", "queue_url": "https://sqs.../ds2032-node-bob-p2p"},
+                {"node_id": "charlie", "queue_url": "https://sqs.../ds2032-node-charlie-p2p"}
+            ]
+        }"#;
+        let deserialized: Message = serde_json::from_str(json).unwrap();
+
+        let constructed: Message = Message::PeerList {
+            message: PeerList {
+                sender: Id::new("alice".to_owned()),
+                timestamp: NINETEEN_EIGHTY_FOUR,
+                msg_id: "a1b2c3d4".to_owned(),
+                peers: vec![
+                    Peer {
+                        node_id: Id::new("bob".to_owned()),
+                        queue_url: "https://sqs.../ds2032-node-bob-p2p"
+                            .to_owned(),
+                    },
+                    Peer {
+                        node_id: Id::new("charlie".to_owned()),
+                        queue_url: "https://sqs.../ds2032-node-charlie-p2p"
+                            .to_owned(),
+                    },
+                ],
+            },
+        };
+
+        assert_eq!(constructed, deserialized);
+    }
+
+    #[test]
+    fn deserialize_ping() {
+        let json = r#"
+        {
+            "type": "PING",
+            "sender": "alice",
+            "timestamp": "1984-01-01T00:00:00Z",
+            "msg_id": "a1b2c3d4",
+            "seq": 31337
+        }"#;
+        let deserialized: Message = serde_json::from_str(json).unwrap();
+
+        let constructed: Message = Message::Ping {
+            message: Ping {
+                sender: Id::new("alice".to_owned()),
+                timestamp: NINETEEN_EIGHTY_FOUR,
+                msg_id: "a1b2c3d4".to_owned(),
+                seq: 31337,
+            },
+        };
+
+        assert_eq!(constructed, deserialized);
+    }
+
+    #[test]
+    fn deserialize_pong() {
+        let json = r#"
+        {
+            "type": "PONG",
+            "sender": "bob",
+            "timestamp": "1984-01-01T00:00:00Z",
+            "msg_id": "a1b2c3d4",
+            "seq": 42
+        }"#;
+        let deserialized: Message = serde_json::from_str(json).unwrap();
+
+        let constructed: Message = Message::Pong {
+            message: Pong {
+                sender: Id::new("bob".to_owned()),
+                timestamp: NINETEEN_EIGHTY_FOUR,
+                msg_id: "a1b2c3d4".to_owned(),
+                seq: 42,
+            },
+        };
+
+        assert_eq!(constructed, deserialized);
+    }
+
+    #[test]
+    fn deserialize_view_event() {
+        let json = r#"
+        {
+            "type": "VIEW_EVENT",
+            "sender": "bob",
+            "timestamp": "1984-01-01T00:00:00Z",
+            "msg_id": "a1b2c3d4",
+            "event_id": "evt-a1b2c3d4",
+            "content_id": "show:midnight-run",
+            "count": 150,
+            "ad_id": "ad-7"
+        }"#;
+        let deserialized: Message = serde_json::from_str(json).unwrap();
+
+        let constructed: Message = Message::ViewEvent {
+            message: ViewEvent {
+                sender: Id::new("bob".to_owned()),
+                timestamp: NINETEEN_EIGHTY_FOUR,
+                msg_id: "a1b2c3d4".to_owned(),
+                event_id: "evt-a1b2c3d4".to_owned(),
+                content_id: "show:midnight-run".to_owned(),
+                count: 150,
+                ad_id: Some("ad-7".to_owned()),
+            },
+        };
+
+        assert_eq!(constructed, deserialized);
+    }
+
+    #[test]
+    fn deserialize_view_event_null() {
+        let json = r#"
+        {
+            "type": "VIEW_EVENT",
+            "sender": "bob",
+            "timestamp": "1984-01-01T00:00:00Z",
+            "msg_id": "a1b2c3d4",
+            "event_id": "evt-a1b2c3d4",
+            "content_id": "show:midnight-run",
+            "count": 150,
+            "ad_id": null
+        }"#;
+        let deserialized: Message = serde_json::from_str(json).unwrap();
+
+        let constructed: Message = Message::ViewEvent {
+            message: ViewEvent {
+                sender: Id::new("bob".to_owned()),
+                timestamp: NINETEEN_EIGHTY_FOUR,
+                msg_id: "a1b2c3d4".to_owned(),
+                event_id: "evt-a1b2c3d4".to_owned(),
+                content_id: "show:midnight-run".to_owned(),
+                count: 150,
+                ad_id: None,
+            },
+        };
+
+        assert_eq!(constructed, deserialized);
+    }
+
+    #[test]
+    fn deserialize_view_event_field_not_present() {
+        let json = r#"
+        {
+            "type": "VIEW_EVENT",
+            "sender": "bob",
+            "timestamp": "1984-01-01T00:00:00Z",
+            "msg_id": "a1b2c3d4",
+            "event_id": "evt-a1b2c3d4",
+            "content_id": "show:midnight-run",
+            "count": 150
+        }"#;
+        let deserialized: Message = serde_json::from_str(json).unwrap();
+
+        let constructed: Message = Message::ViewEvent {
+            message: ViewEvent {
+                sender: Id::new("bob".to_owned()),
+                timestamp: NINETEEN_EIGHTY_FOUR,
+                msg_id: "a1b2c3d4".to_owned(),
+                event_id: "evt-a1b2c3d4".to_owned(),
+                content_id: "show:midnight-run".to_owned(),
+                count: 150,
+                ad_id: None,
+            },
+        };
+
+        assert_eq!(constructed, deserialized);
+    }
+
+    #[test]
+    fn deserialize_audit_result() {
+        let json = r#"
+        {
+            "type": "AUDIT_RESULT",
+            "sender": "alice",
+            "timestamp": "1984-01-01T00:00:00Z",
+            "msg_id": "a1b2c3d4",
+            "content_id": "show:midnight-run",
+            "agreed_count": 150,
+            "confidence": 0.92,
+            "voters": ["bob", "charlie", "don", "edward"]
+        }"#;
+        let deserialized: Message = serde_json::from_str(json).unwrap();
+
+        let constructed: Message = Message::AuditResult {
+            message: AuditResult {
+                sender: Id::new("alice".to_owned()),
+                timestamp: NINETEEN_EIGHTY_FOUR,
+                msg_id: "a1b2c3d4".to_owned(),
+                content_id: "show:midnight-run".to_owned(),
+                agreed_count: 150,
+                confidence: 0.92,
+                voters: Some(vec![
+                    Id::new("bob".to_owned()),
+                    Id::new("charlie".to_owned()),
+                    Id::new("don".to_owned()),
+                    Id::new("edward".to_owned()),
+                ]),
+            },
+        };
+
+        assert_eq!(constructed, deserialized);
+    }
+
+    #[test]
+    fn deserialize_audit_result_null() {
+        let json = r#"
+        {
+            "type": "AUDIT_RESULT",
+            "sender": "alice",
+            "timestamp": "1984-01-01T00:00:00Z",
+            "msg_id": "a1b2c3d4",
+            "content_id": "show:midnight-run",
+            "agreed_count": 150,
+            "confidence": 0.92,
+            "voters": null
+        }"#;
+        let deserialized: Message = serde_json::from_str(json).unwrap();
+
+        let constructed: Message = Message::AuditResult {
+            message: AuditResult {
+                sender: Id::new("alice".to_owned()),
+                timestamp: NINETEEN_EIGHTY_FOUR,
+                msg_id: "a1b2c3d4".to_owned(),
+                content_id: "show:midnight-run".to_owned(),
+                agreed_count: 150,
+                confidence: 0.92,
+                voters: None,
+            },
+        };
+
+        assert_eq!(constructed, deserialized);
+    }
+
+    #[test]
+    fn deserialize_audit_result_field_not_present() {
+        let json = r#"
+        {
+            "type": "AUDIT_RESULT",
+            "sender": "alice",
+            "timestamp": "1984-01-01T00:00:00Z",
+            "msg_id": "a1b2c3d4",
+            "content_id": "show:midnight-run",
+            "agreed_count": 150,
+            "confidence": 0.92
+        }"#;
+        let deserialized: Message = serde_json::from_str(json).unwrap();
+
+        let constructed: Message = Message::AuditResult {
+            message: AuditResult {
+                sender: Id::new("alice".to_owned()),
+                timestamp: NINETEEN_EIGHTY_FOUR,
+                msg_id: "a1b2c3d4".to_owned(),
+                content_id: "show:midnight-run".to_owned(),
+                agreed_count: 150,
+                confidence: 0.92,
+                voters: None,
+            },
+        };
+
+        assert_eq!(constructed, deserialized);
+    }
+
+    #[test]
+    fn deserialize_choke() {
+        let json = r#"
+        {
+            "type": "CHOKE",
+            "sender": "alice",
+            "timestamp": "1984-01-01T00:00:00Z",
+            "msg_id": "a1b2c3d4"
+        }"#;
+        let deserialized: Message = serde_json::from_str(json).unwrap();
+
+        let constructed: Message = Message::Choke {
+            message: Choke {
+                sender: Id::new("alice".to_owned()),
+                timestamp: NINETEEN_EIGHTY_FOUR,
+                msg_id: "a1b2c3d4".to_owned(),
+            },
+        };
+
+        assert_eq!(constructed, deserialized);
+    }
+
+    #[test]
+    fn deserialize_unchoke() {
+        let json = r#"
+        {
+            "type": "UNCHOKE",
+            "sender": "alice",
+            "timestamp": "1984-01-01T00:00:00Z",
+            "msg_id": "a1b2c3d4"
+        }"#;
+        let deserialized: Message = serde_json::from_str(json).unwrap();
+
+        let constructed: Message = Message::Unchoke {
+            message: Unchoke {
+                sender: Id::new("alice".to_owned()),
+                timestamp: NINETEEN_EIGHTY_FOUR,
+                msg_id: "a1b2c3d4".to_owned(),
+            },
+        };
+
+        assert_eq!(constructed, deserialized);
+    }
 }
