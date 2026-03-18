@@ -235,13 +235,13 @@ impl ReputationNode {
             total_weight += weight;
         }
 
-        let mut weighted: Vec<(u64, TotalCmpF64)> = weighted
+        let weighted: Vec<(u64, TotalCmpF64)> = weighted
             .into_iter()
             .map(|(&value, weight)| (value, TotalCmpF64(weight)))
             .collect();
 
         if let Some(&(winner, win_weight)) =
-            weighted.iter().max_by_key(|&&(value, weight)| weight)
+            weighted.iter().max_by_key(|&&(_value, weight)| weight)
         {
             let confidence = if total_weight > 0.0 {
                 win_weight.0 / total_weight
@@ -252,7 +252,7 @@ impl ReputationNode {
             if verbose {
                 println!("  Votes: {votes:?}");
                 print!("  Weights: ");
-                for (peer_id, votes) in votes {
+                for peer_id in votes.keys() {
                     let weight = self
                         .peers
                         .get(peer_id)
