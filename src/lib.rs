@@ -27,6 +27,7 @@
 )]
 
 use aws_config as _;
+use jiff::tz::TimeZone;
 use owo_colors::OwoColorize as _;
 use tokio as _;
 
@@ -46,7 +47,9 @@ pub const fn read_a_book() -> &'static str {
 }
 
 pub fn log(node_id: &Id, message: &str) {
-    let timestamp = jiff::Timestamp::now().strftime("%FT%T%.8fZ");
+    let timestamp = jiff::Timestamp::now()
+        .to_zoned(TimeZone::UTC)
+        .strftime("%FT%T%.8fZ");
     let timestamp = format!("[{timestamp}]");
     let node_id = format!("[{node_id}]");
     println!(
@@ -58,7 +61,9 @@ pub fn log(node_id: &Id, message: &str) {
 }
 
 pub fn warn(node_id: &Id, message: &str) {
-    let timestamp = jiff::Timestamp::now().strftime("%FT%T%.8fZ");
+    let timestamp = jiff::Timestamp::now()
+        .to_zoned(TimeZone::UTC)
+        .strftime("%FT%T%.8fZ");
     let timestamp = format!("[{timestamp}]");
     let node_id = format!("[{node_id}]");
     println!(
@@ -70,7 +75,9 @@ pub fn warn(node_id: &Id, message: &str) {
 }
 
 pub fn error(node_id: &Id, message: &str) {
-    let timestamp = jiff::Timestamp::now().strftime("%FT%T%.8fZ");
+    let timestamp = jiff::Timestamp::now()
+        .to_zoned(TimeZone::UTC)
+        .strftime("%FT%T%.8fZ");
     let timestamp = format!("[{timestamp}]");
     let node_id = format!("[{node_id}]");
     println!(

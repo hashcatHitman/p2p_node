@@ -19,6 +19,7 @@ use core::fmt;
 use core::fmt::Display;
 use core::str::FromStr;
 
+use jiff::tz::TimeZone;
 use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value, json};
 
@@ -85,8 +86,7 @@ impl FromStr for MessageKind {
 pub fn base(kind: MessageKind, sender: &Id) -> Map<String, Value> {
     let mut message = Map::new();
     let timestamp = jiff::Timestamp::now()
-        .in_tz("UTC")
-        .unwrap()
+        .to_zoned(TimeZone::UTC)
         .timestamp()
         .to_string();
     let message_id = uuid::Uuid::new_v4().to_string();
@@ -198,7 +198,9 @@ impl Hello {
     pub fn new(sender: Id, queue_url: String) -> Self {
         Self {
             sender,
-            timestamp: jiff::Timestamp::now().in_tz("UTC").unwrap().timestamp(),
+            timestamp: jiff::Timestamp::now()
+                .to_zoned(TimeZone::UTC)
+                .timestamp(),
             msg_id: uuid::Uuid::new_v4().to_string(),
             queue_url,
         }
@@ -244,7 +246,9 @@ impl PeerList {
     pub fn new(sender: Id, peers: Vec<Peer>) -> Self {
         Self {
             sender,
-            timestamp: jiff::Timestamp::now().in_tz("UTC").unwrap().timestamp(),
+            timestamp: jiff::Timestamp::now()
+                .to_zoned(TimeZone::UTC)
+                .timestamp(),
             msg_id: uuid::Uuid::new_v4().to_string(),
             peers,
         }
@@ -290,7 +294,9 @@ impl Ping {
     pub fn new(sender: Id, seq: u16) -> Self {
         Self {
             sender,
-            timestamp: jiff::Timestamp::now().in_tz("UTC").unwrap().timestamp(),
+            timestamp: jiff::Timestamp::now()
+                .to_zoned(TimeZone::UTC)
+                .timestamp(),
             msg_id: uuid::Uuid::new_v4().to_string(),
             seq,
         }
@@ -336,7 +342,9 @@ impl Pong {
     pub fn new(sender: Id, seq: u16) -> Self {
         Self {
             sender,
-            timestamp: jiff::Timestamp::now().in_tz("UTC").unwrap().timestamp(),
+            timestamp: jiff::Timestamp::now()
+                .to_zoned(TimeZone::UTC)
+                .timestamp(),
             msg_id: uuid::Uuid::new_v4().to_string(),
             seq,
         }
@@ -391,7 +399,9 @@ impl ViewEvent {
     ) -> Self {
         Self {
             sender,
-            timestamp: jiff::Timestamp::now().in_tz("UTC").unwrap().timestamp(),
+            timestamp: jiff::Timestamp::now()
+                .to_zoned(TimeZone::UTC)
+                .timestamp(),
             msg_id: uuid::Uuid::new_v4().to_string(),
             event_id,
             content_id,
@@ -452,7 +462,9 @@ impl AuditResult {
     ) -> Self {
         Self {
             sender,
-            timestamp: jiff::Timestamp::now().in_tz("UTC").unwrap().timestamp(),
+            timestamp: jiff::Timestamp::now()
+                .to_zoned(TimeZone::UTC)
+                .timestamp(),
             msg_id: uuid::Uuid::new_v4().to_string(),
             content_id,
             agreed_count,
