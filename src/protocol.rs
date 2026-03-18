@@ -644,6 +644,7 @@ impl Message {
     }
 }
 
+#[expect(clippy::missing_panics_doc, reason = "tests tend to do that")]
 #[cfg(test)]
 mod test {
     use crate::node::Id;
