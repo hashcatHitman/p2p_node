@@ -114,17 +114,27 @@ impl SqsTransport {
 
     pub async fn send(&mut self, target_node_id: Id, message: Message) -> bool {
         if let Some(url) = self.get_queue_url(target_node_id.clone()).await {
-            match self
-                .sqs
-                .send_message()
-                .queue_url(url)
-                .message_body(serde_json::to_string(&message).unwrap())
-                .send()
-                .await
-            {
-                Ok(_) => return true,
+            match serde_json::to_string(&message) {
+                Ok(serialized) => {
+                    match self
+                        .sqs
+                        .send_message()
+                        .queue_url(url)
+                        .message_body(serialized)
+                        .send()
+                        .await
+                    {
+                        Ok(_) => return true,
+                        Err(err) => {
+                            eprintln!("[ERR] Send to {target_node_id}: {err}");
+                            return false;
+                        }
+                    }
+                }
                 Err(err) => {
-                    eprintln!("[ERR] Send to {target_node_id}: {err}");
+                    eprintln!(
+                        "[ERR] Could not serialize message for {target_node_id}: {err}"
+                    );
                     return false;
                 }
             }
@@ -227,8 +237,15 @@ pub struct P2PNode {
 impl P2PNode {
     pub async fn new(node_id: Id, verbose: bool, sqs: Client) -> Self {
         let mut transport = SqsTransport::new(sqs);
-        let disk_cache = File::open("resources.json").unwrap();
-        let _: bool = transport.load_resources(disk_cache);
+
+        if let Ok(disk_cache) = File::open("resources.json") {
+            if !transport.load_resources(disk_cache) {
+                crate::warn(&node_id, "Failed to load resources from disk");
+            }
+        } else {
+            crate::warn(&node_id, "Failed to open resources file on disk");
+        }
+
         let queue_url = transport.get_queue_url(node_id.clone()).await;
 
         let this = Self {
