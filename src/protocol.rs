@@ -195,6 +195,15 @@ pub struct Hello {
 }
 
 impl Hello {
+    pub fn new(sender: Id, queue_url: String) -> Self {
+        Self {
+            sender,
+            timestamp: jiff::Timestamp::now().in_tz("UTC").unwrap().timestamp(),
+            msg_id: uuid::Uuid::new_v4().to_string(),
+            queue_url,
+        }
+    }
+
     pub const fn sender(&self) -> &Id {
         &self.sender
     }
@@ -232,6 +241,15 @@ pub struct PeerList {
 }
 
 impl PeerList {
+    pub fn new(sender: Id, peers: Vec<Peer>) -> Self {
+        Self {
+            sender,
+            timestamp: jiff::Timestamp::now().in_tz("UTC").unwrap().timestamp(),
+            msg_id: uuid::Uuid::new_v4().to_string(),
+            peers,
+        }
+    }
+
     pub const fn sender(&self) -> &Id {
         &self.sender
     }
@@ -269,6 +287,15 @@ pub struct Ping {
 }
 
 impl Ping {
+    pub fn new(sender: Id, seq: u16) -> Self {
+        Self {
+            sender,
+            timestamp: jiff::Timestamp::now().in_tz("UTC").unwrap().timestamp(),
+            msg_id: uuid::Uuid::new_v4().to_string(),
+            seq,
+        }
+    }
+
     pub const fn sender(&self) -> &Id {
         &self.sender
     }
@@ -306,6 +333,15 @@ pub struct Pong {
 }
 
 impl Pong {
+    pub fn new(sender: Id, seq: u16) -> Self {
+        Self {
+            sender,
+            timestamp: jiff::Timestamp::now().in_tz("UTC").unwrap().timestamp(),
+            msg_id: uuid::Uuid::new_v4().to_string(),
+            seq,
+        }
+    }
+
     pub const fn sender(&self) -> &Id {
         &self.sender
     }
@@ -346,6 +382,24 @@ pub struct ViewEvent {
 }
 
 impl ViewEvent {
+    pub fn new(
+        sender: Id,
+        event_id: String,
+        content_id: String,
+        count: u64,
+        ad_id: Option<String>,
+    ) -> Self {
+        Self {
+            sender,
+            timestamp: jiff::Timestamp::now().in_tz("UTC").unwrap().timestamp(),
+            msg_id: uuid::Uuid::new_v4().to_string(),
+            event_id,
+            content_id,
+            count,
+            ad_id,
+        }
+    }
+
     pub const fn sender(&self) -> &Id {
         &self.sender
     }
@@ -389,6 +443,24 @@ pub struct AuditResult {
 }
 
 impl AuditResult {
+    pub fn new(
+        sender: Id,
+        content_id: String,
+        agreed_count: u64,
+        confidence: f64,
+        voters: Option<Vec<Id>>,
+    ) -> Self {
+        Self {
+            sender,
+            timestamp: jiff::Timestamp::now().in_tz("UTC").unwrap().timestamp(),
+            msg_id: uuid::Uuid::new_v4().to_string(),
+            content_id,
+            agreed_count,
+            confidence,
+            voters,
+        }
+    }
+
     pub const fn sender(&self) -> &Id {
         &self.sender
     }

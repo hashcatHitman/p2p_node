@@ -120,13 +120,13 @@ impl SqsTransport {
             })
     }
 
-    pub async fn send(&mut self, target_node_id: Id, message: Value) -> bool {
+    pub async fn send(&mut self, target_node_id: Id, message: Message) -> bool {
         if let Some(url) = self.get_queue_url(target_node_id.clone()).await {
             match self
                 .sqs
                 .send_message()
                 .queue_url(url)
-                .message_body(message.to_string())
+                .message_body(serde_json::to_string(&message).unwrap())
                 .send()
                 .await
             {
@@ -288,13 +288,21 @@ impl P2PNode {
             &format!("Bootstrapping via {bootstrap_nodes:?}..."),
         );
 
-        let hi = protocol::hello(
-            &self.node_id,
+        let message = Hello::new(
+            self.node_id.clone(),
             self.queue_url.clone().unwrap_or_default(),
         );
+
         for node in bootstrap_nodes {
-            let _: bool =
-                self.transport.send(node, Value::Object(hi.clone())).await;
+            let _: bool = self
+                .transport
+                .send(
+                    node,
+                    Message::Hello {
+                        message: message.clone(),
+                    },
+                )
+                .await;
         }
     }
 
@@ -343,12 +351,13 @@ impl P2PNode {
                 .insert(node_id.clone(), queue_url.to_owned()),
         );
 
-        let plist = protocol::peer_list(
-            &self.node_id,
-            &self.gossip.get_peer_list_message(),
+        let plist = PeerList::new(
+            self.node_id.clone(),
+            self.gossip.get_peer_list_message(),
         );
 
-        self.transport.send(node_id.clone(), Value::Object(plist));
+        self.transport
+            .send(node_id.clone(), Message::PeerList { message: plist });
     }
 
     pub fn handle_peer_list(&mut self, message: &PeerList) {
@@ -381,9 +390,9 @@ impl P2PNode {
             &format!("Got a ping from: {node_id} (#{seq})"),
         );
 
-        let response = protocol::pong(&node_id.clone(), seq);
+        let response = Pong::new(self.node_id.clone(), seq);
         self.transport
-            .send(node_id.clone(), Value::Object(response));
+            .send(node_id.clone(), Message::Pong { message: response });
         self.choking.record_contribution(node_id, 1);
         self.reputation.record_contribution(node_id, 1);
     }
@@ -508,19 +517,28 @@ impl P2PNode {
 
     pub fn do_gossip(&mut self) {
         if let Some(target) = self.gossip.pick_gossip_target() {
-            let peers = self.gossip.get_peer_list_message();
-            let message = protocol::peer_list(&self.node_id, &peers);
-            self.transport.send(target.clone(), Value::Object(message));
+            let message = PeerList::new(
+                self.node_id.clone(),
+                self.gossip.get_peer_list_message(),
+            );
+
+            self.transport
+                .send(target.clone(), Message::PeerList { message });
             crate::log(&self.node_id, &format!("Sent gossip to: {target}"));
         }
     }
 
     pub fn do_heartbeat(&mut self) {
         self.ping_seq += 1;
-        let ping = protocol::ping(&self.node_id, self.ping_seq);
+        let ping = Ping::new(self.node_id.clone(), self.ping_seq);
+
         for peer in self.heartbeat.send_pings(self.rounds) {
-            self.transport
-                .send(peer.clone(), Value::Object(ping.clone()));
+            self.transport.send(
+                peer.clone(),
+                Message::Ping {
+                    message: ping.clone(),
+                },
+            );
             crate::log(
                 &self.node_id,
                 &format!("Sent heartbeat to: {peer} (#{})", self.ping_seq),
@@ -560,16 +578,21 @@ impl P2PNode {
                     &self.node_id,
                     &format!("Publishing: {event_id}, {key}, {count_freeze}"),
                 );
-                let message = protocol::view_event(
-                    &self.node_id,
+                let message = ViewEvent::new(
+                    self.node_id.clone(),
                     event_id,
                     key.to_owned(),
                     count_freeze,
-                    String::new(),
+                    None,
                 );
 
                 for peer in self.heartbeat.get_alive_peers() {
-                    self.transport.send(peer, Value::Object(message.clone()));
+                    self.transport.send(
+                        peer,
+                        Message::ViewEvent {
+                            message: message.clone(),
+                        },
+                    );
                 }
             }
             None => crate::warn(
@@ -607,8 +630,8 @@ impl P2PNode {
                         let voter_ids: Vec<Id> =
                             votes.keys().cloned().collect();
 
-                        let message = protocol::audit_result(
-                            &self.node_id,
+                        let message = AuditResult::new(
+                            self.node_id.clone(),
                             content_id.clone(),
                             count,
                             confidence,
@@ -616,8 +639,12 @@ impl P2PNode {
                         );
 
                         for peer in self.heartbeat.get_alive_peers() {
-                            self.transport
-                                .send(peer, Value::Object(message.clone()));
+                            self.transport.send(
+                                peer,
+                                Message::AuditResult {
+                                    message: message.clone(),
+                                },
+                            );
                         }
                     }
                     None => crate::warn(
