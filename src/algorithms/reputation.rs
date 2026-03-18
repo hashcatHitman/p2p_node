@@ -176,14 +176,14 @@ impl ReputationNode {
     /// Record that a peer contributed `units` of data/messages to us.
     pub fn record_contribution(&mut self, peer_id: &Id, units: u32) {
         if let Some(peer) = self.peers.get_mut(peer_id) {
-            peer.contributions += 1;
+            peer.contributions += units;
         }
     }
 
     /// Record that a peer consumed `units` from us.
     pub fn record_consumption(&mut self, peer_id: &Id, units: u32) {
         if let Some(peer) = self.peers.get_mut(peer_id) {
-            peer.consumptions += 1;
+            peer.consumptions += units;
         }
     }
 
