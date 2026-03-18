@@ -26,7 +26,6 @@ use core::fmt::Display;
 use std::collections::HashMap;
 
 use rand::seq::IteratorRandom as _;
-use serde_json::json;
 
 use crate::node::Id;
 use crate::protocol::Peer;
@@ -237,8 +236,6 @@ impl Display for GossipNode {
 #[expect(clippy::missing_panics_doc, reason = "tests tend to do that")]
 #[cfg(test)]
 mod test {
-    use serde_json::json;
-
     use crate::algorithms::gossip::GossipNode;
     use crate::node::Id;
     use crate::protocol::Peer;

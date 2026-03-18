@@ -10,16 +10,13 @@
 //!   received message, then calls run_periodic_tasks() for timers.
 
 use core::fmt::{self, Display};
-use core::str::FromStr as _;
 use std::collections::HashMap;
 use std::fs::File;
 use std::{io, time};
 
 use aws_sdk_sqs::Client;
-use owo_colors::OwoColorize as _;
 use rand::seq::IteratorRandom as _;
 use serde::{Deserialize, Serialize};
-use serde_json::{Map, Value};
 
 use crate::algorithms::choking::ChokingNode;
 use crate::algorithms::content::ViewEventRecord;
@@ -27,8 +24,8 @@ use crate::algorithms::gossip::GossipNode;
 use crate::algorithms::heartbeat::HeartbeatNode;
 use crate::algorithms::reputation::ReputationNode;
 use crate::protocol::{
-    self, AuditResult, Choke, Hello, Message, MessageKind, PeerList, Ping,
-    Pong, Unchoke, ViewEvent,
+    AuditResult, Choke, Hello, Message, PeerList, Ping, Pong, Unchoke,
+    ViewEvent,
 };
 
 #[derive(

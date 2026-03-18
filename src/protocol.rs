@@ -634,12 +634,10 @@ impl Message {
 
 #[cfg(test)]
 mod test {
-    use serde_json::{Map, Value, json};
-
     use crate::node::Id;
     use crate::protocol::{
-        AuditResult, Choke, Hello, Message, MessageKind, Peer, PeerList, Ping,
-        Pong, Unchoke, ViewEvent, base, hello, peer_list,
+        AuditResult, Choke, Hello, Message, Peer, PeerList, Ping, Pong,
+        Unchoke, ViewEvent,
     };
 
     const NINETEEN_EIGHTY_FOUR: jiff::Timestamp =
