@@ -173,12 +173,22 @@ impl SqsTransport {
 
     pub async fn delete(&mut self, node_id: Id, receipt_handle: String) {
         if let Some(url) = self.get_queue_url(node_id.clone()).await {
-            self.sqs
+            match self
+                .sqs
                 .delete_message()
                 .queue_url(url)
-                .receipt_handle(receipt_handle)
+                .receipt_handle(&receipt_handle)
                 .send()
-                .await;
+                .await
+            {
+                Ok(_deleted) => (),
+                Err(err) => {
+                    crate::warn(
+                        &node_id,
+                        &format!("Failed to delete {receipt_handle}: {err}"),
+                    );
+                }
+            }
         }
     }
 }
@@ -298,7 +308,7 @@ impl P2PNode {
         }
     }
 
-    pub fn handle_message(&mut self, message: &Message) {
+    pub async fn handle_message(&mut self, message: &Message) {
         let node_id = message.sender();
 
         if *node_id == self.node_id {
@@ -311,9 +321,9 @@ impl P2PNode {
         }
 
         match *message {
-            Message::Hello { ref message } => self.handle_hello(message),
+            Message::Hello { ref message } => self.handle_hello(message).await,
             Message::PeerList { ref message } => self.handle_peer_list(message),
-            Message::Ping { ref message } => self.handle_ping(message),
+            Message::Ping { ref message } => self.handle_ping(message).await,
             Message::Pong { ref message } => self.handle_pong(message),
             Message::ViewEvent { ref message } => {
                 self.handle_view_event(message);
@@ -326,7 +336,7 @@ impl P2PNode {
         }
     }
 
-    pub fn handle_hello(&mut self, message: &Hello) {
+    pub async fn handle_hello(&mut self, message: &Hello) {
         let node_id = message.sender();
 
         let queue_url = message.queue_url();
@@ -348,8 +358,16 @@ impl P2PNode {
             self.gossip.get_peer_list_message(),
         );
 
-        self.transport
-            .send(node_id.clone(), Message::PeerList { message: plist });
+        if !self
+            .transport
+            .send(node_id.clone(), Message::PeerList { message: plist })
+            .await
+        {
+            crate::warn(
+                &self.node_id,
+                "Failed to send peer list when handling hello from peer",
+            );
+        }
     }
 
     pub fn handle_peer_list(&mut self, message: &PeerList) {
@@ -374,7 +392,7 @@ impl P2PNode {
         }
     }
 
-    pub fn handle_ping(&mut self, message: &Ping) {
+    pub async fn handle_ping(&mut self, message: &Ping) {
         let node_id = message.sender();
         let seq = message.seq();
         crate::log(
@@ -383,8 +401,16 @@ impl P2PNode {
         );
 
         let response = Pong::new(self.node_id.clone(), seq);
-        self.transport
-            .send(node_id.clone(), Message::Pong { message: response });
+        if !self
+            .transport
+            .send(node_id.clone(), Message::Pong { message: response })
+            .await
+        {
+            crate::warn(
+                &self.node_id,
+                &format!("Failed to send a pong to: {node_id} (#{seq})"),
+            );
+        }
         self.choking.record_contribution(node_id, 1);
         self.reputation.record_contribution(node_id, 1);
     }
@@ -461,20 +487,25 @@ impl P2PNode {
         crate::log(&self.node_id, &format!("Unchoked by {node_id}"));
     }
 
-    pub fn run_periodic_tasks(&mut self) {
+    #[expect(
+        clippy::future_not_send,
+        reason = "I don't plan on sending these futures between threads and
+        would rather not use a panicking RNG."
+    )]
+    pub async fn run_periodic_tasks(&mut self) {
         let now = time::Instant::now();
 
         if now - self.last_gossip
             >= time::Duration::from_secs(self.gossip_interval.into())
         {
-            self.do_gossip();
+            self.do_gossip().await;
             self.last_gossip = now;
         }
 
         if now - self.last_heartbeat
             >= time::Duration::from_secs(self.heartbeat_interval.into())
         {
-            self.do_heartbeat();
+            self.do_heartbeat().await;
             self.last_heartbeat = now;
         }
 
@@ -495,46 +526,68 @@ impl P2PNode {
         if now - self.last_publish
             >= time::Duration::from_secs(self.publish_interval.into())
         {
-            self.do_publish();
+            self.do_publish().await;
             self.last_publish = now;
         }
 
         if now - self.last_audit
             >= time::Duration::from_secs(self.audit_interval.into())
         {
-            self.do_audit();
+            self.do_audit().await;
             self.last_audit = now;
         }
     }
 
-    pub fn do_gossip(&mut self) {
+    pub async fn do_gossip(&mut self) {
         if let Some(target) = self.gossip.pick_gossip_target() {
             let message = PeerList::new(
                 self.node_id.clone(),
                 self.gossip.get_peer_list_message(),
             );
 
-            self.transport
-                .send(target.clone(), Message::PeerList { message });
-            crate::log(&self.node_id, &format!("Sent gossip to: {target}"));
+            if self
+                .transport
+                .send(target.clone(), Message::PeerList { message })
+                .await
+            {
+                crate::log(&self.node_id, &format!("Sent gossip to: {target}"));
+            } else {
+                crate::warn(
+                    &self.node_id,
+                    &format!("Failed to send gossip to: {target}"),
+                );
+            }
         }
     }
 
-    pub fn do_heartbeat(&mut self) {
+    pub async fn do_heartbeat(&mut self) {
         self.ping_seq += 1;
         let ping = Ping::new(self.node_id.clone(), self.ping_seq);
 
         for peer in self.heartbeat.send_pings(self.rounds) {
-            self.transport.send(
-                peer.clone(),
-                Message::Ping {
-                    message: ping.clone(),
-                },
-            );
-            crate::log(
-                &self.node_id,
-                &format!("Sent heartbeat to: {peer} (#{})", self.ping_seq),
-            );
+            if self
+                .transport
+                .send(
+                    peer.clone(),
+                    Message::Ping {
+                        message: ping.clone(),
+                    },
+                )
+                .await
+            {
+                crate::log(
+                    &self.node_id,
+                    &format!("Sent heartbeat to: {peer} (#{})", self.ping_seq),
+                );
+            } else {
+                crate::warn(
+                    &self.node_id,
+                    &format!(
+                        "Failed to send heartbeat to: {peer} (#{})",
+                        self.ping_seq
+                    ),
+                );
+            }
         }
     }
 
@@ -550,7 +603,12 @@ impl P2PNode {
         crate::log(&self.node_id, "Updated scores");
     }
 
-    pub fn do_publish(&mut self) {
+    #[expect(
+        clippy::future_not_send,
+        reason = "I don't plan on sending these futures between threads and
+        would rather not use a panicking RNG."
+    )]
+    pub async fn do_publish(&mut self) {
         match self.view_counts.iter_mut().choose(&mut rand::rng()) {
             Some((&key, count)) => {
                 *count += 1;
@@ -579,12 +637,21 @@ impl P2PNode {
                 );
 
                 for peer in self.heartbeat.get_alive_peers() {
-                    self.transport.send(
-                        peer,
-                        Message::ViewEvent {
-                            message: message.clone(),
-                        },
-                    );
+                    if !self
+                        .transport
+                        .send(
+                            peer.clone(),
+                            Message::ViewEvent {
+                                message: message.clone(),
+                            },
+                        )
+                        .await
+                    {
+                        crate::warn(
+                            &self.node_id,
+                            &format!("Failed to send view event to {peer}"),
+                        );
+                    }
                 }
             }
             None => crate::warn(
@@ -594,7 +661,12 @@ impl P2PNode {
         }
     }
 
-    pub fn do_audit(&mut self) {
+    #[expect(
+        clippy::future_not_send,
+        reason = "I don't plan on sending these futures between threads and
+        would rather not use a panicking RNG."
+    )]
+    pub async fn do_audit(&mut self) {
         match self
             .view_events
             .iter()
@@ -631,12 +703,23 @@ impl P2PNode {
                         );
 
                         for peer in self.heartbeat.get_alive_peers() {
-                            self.transport.send(
-                                peer,
-                                Message::AuditResult {
-                                    message: message.clone(),
-                                },
-                            );
+                            if !self
+                                .transport
+                                .send(
+                                    peer.clone(),
+                                    Message::AuditResult {
+                                        message: message.clone(),
+                                    },
+                                )
+                                .await
+                            {
+                                crate::warn(
+                                    &self.node_id,
+                                    &format!(
+                                        "Failed to send audit result to {peer}"
+                                    ),
+                                );
+                            }
                         }
                     }
                     None => crate::warn(
@@ -652,6 +735,11 @@ impl P2PNode {
         }
     }
 
+    #[expect(
+        clippy::future_not_send,
+        reason = "I don't plan on sending these futures between threads and
+        would rather not use a panicking RNG."
+    )]
     pub async fn run(&mut self) {
         self.running = true;
         crate::log(&self.node_id, "Starting main loop...");
@@ -664,12 +752,14 @@ impl P2PNode {
                 self.transport.receive(self.node_id.clone(), 10, 5).await;
 
             for (message, receipt) in messages {
-                self.handle_message(&message);
+                self.handle_message(&message).await;
 
-                self.transport.delete(self.node_id.clone(), receipt.clone());
+                self.transport
+                    .delete(self.node_id.clone(), receipt.clone())
+                    .await;
             }
 
-            self.run_periodic_tasks();
+            self.run_periodic_tasks().await;
             self.gossip.age_entries();
         }
 
