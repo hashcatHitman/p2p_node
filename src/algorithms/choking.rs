@@ -141,10 +141,10 @@ impl ChokingNode {
     pub fn run_choking_round(&mut self) {
         self.round += 1;
 
-        let mut interested: Vec<(Id, PeerTracker)> = self
+        let interested: Vec<(Id, PeerTracker)> = self
             .peers
             .iter()
-            .filter(|&(node_id, tracker)| tracker.is_interested)
+            .filter(|&(_node_id, tracker)| tracker.is_interested)
             .map(|(node_id, tracker)| (node_id.clone(), tracker.clone()))
             .collect();
 
@@ -154,7 +154,7 @@ impl ChokingNode {
 
         let mut ranked = interested.clone();
         #[expect(clippy::pattern_type_mismatch, reason = "todo later")]
-        ranked.sort_by_key(|(node_id, tracker)| tracker.contributed);
+        ranked.sort_by_key(|(_node_id, tracker)| tracker.contributed);
         ranked.reverse();
 
         let optimism = self.round.is_multiple_of(self.optimistic_interval);
@@ -163,7 +163,7 @@ impl ChokingNode {
         let mut to_unchoke = HashSet::new();
 
         #[expect(clippy::pattern_type_mismatch, reason = "todo later")]
-        for (peer, tracker) in ranked.iter().take(regular_slots.into()) {
+        for (peer, _tracker) in ranked.iter().take(regular_slots.into()) {
             let _: bool = to_unchoke.insert(peer);
         }
 
@@ -171,11 +171,11 @@ impl ChokingNode {
             #[expect(clippy::pattern_type_mismatch, reason = "todo later")]
             let choked_interested: Vec<&(Id, PeerTracker)> = ranked
                 .iter()
-                .filter(|(node_id, tracker)| !to_unchoke.contains(node_id))
+                .filter(|(node_id, _tracker)| !to_unchoke.contains(node_id))
                 .collect();
 
             #[expect(clippy::pattern_type_mismatch, reason = "todo later")]
-            if let Some((lucky_peer, tracker)) =
+            if let Some((lucky_peer, _tracker)) =
                 choked_interested.choose(&mut rand::rng())
             {
                 self.optimistic_peer = Some(lucky_peer.clone());
