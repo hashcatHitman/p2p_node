@@ -90,7 +90,7 @@ impl SqsTransport {
                 self.queue_url_cache = cache.queues;
                 true
             }
-            Err(error) => false,
+            Err(_error) => false,
         }
     }
 
@@ -153,7 +153,7 @@ impl SqsTransport {
                     if let Some(msg_vec) = response.messages {
                         for sqs_msg in msg_vec {
                             if let Some(body) = sqs_msg.body()
-                                && let Ok(mut deserialized) =
+                                && let Ok(deserialized) =
                                     serde_json::from_str::<Message>(body)
                                 && let Some(receipt_handle) =
                                     sqs_msg.receipt_handle
