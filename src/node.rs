@@ -70,6 +70,11 @@ pub struct SqsTransport {
     queue_url_cache: HashMap<Id, String>,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct Resources {
+    queues: HashMap<Id, String>,
+}
+
 impl SqsTransport {
     pub fn new(sqs: Client) -> Self {
         Self {
@@ -80,25 +85,15 @@ impl SqsTransport {
 
     pub fn load_resources(&mut self, disk_cache: File) -> bool {
         let disk_cache = io::BufReader::new(disk_cache);
-        let cache: Result<Value, _> = serde_json::from_reader(disk_cache);
-        let cache: Option<HashMap<String, String>> = cache
-            .map(|cache: Value| {
-                let cache = cache.as_object()?;
-                cache.get("queues").and_then(|cache: &Value| {
-                    serde_json::from_value(cache.clone()).ok()
-                })
-            })
-            .ok()
-            .flatten();
+        let cache: Result<Resources, serde_json::Error> =
+            serde_json::from_reader(disk_cache);
 
-        if let Some(cache) = cache {
-            self.queue_url_cache = cache
-                .into_iter()
-                .map(|(id, url)| (Id::new(id), url))
-                .collect();
-            true
-        } else {
-            false
+        match cache {
+            Ok(cache) => {
+                self.queue_url_cache = cache.queues;
+                true
+            }
+            Err(error) => false,
         }
     }
 
