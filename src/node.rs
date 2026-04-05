@@ -350,6 +350,7 @@ impl P2PNode {
             }
             Message::Choke { ref message } => self.handle_choke(message),
             Message::Unchoke { ref message } => self.handle_unchoke(message),
+            Message::Election { ref message } => todo!("{:?}", message),
         }
     }
 

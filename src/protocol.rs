@@ -566,6 +566,39 @@ impl Unchoke {
     }
 }
 
+#[derive(
+    Debug, Clone, PartialEq, PartialOrd, Default, Serialize, Deserialize,
+)]
+pub struct Election {
+    sender: Id,
+    timestamp: jiff::Timestamp,
+    msg_id: String,
+    term: u64,
+    reputation: f64,
+}
+
+impl Election {
+    pub const fn sender(&self) -> &Id {
+        &self.sender
+    }
+
+    pub const fn timestamp(&self) -> jiff::Timestamp {
+        self.timestamp
+    }
+
+    pub fn msg_id(&self) -> &str {
+        &self.msg_id
+    }
+
+    pub const fn term(&self) -> u64 {
+        self.term
+    }
+
+    pub const fn reputation(&self) -> f64 {
+        self.reputation
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, PartialOrd, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum Message {
@@ -601,6 +634,10 @@ pub enum Message {
         #[serde(flatten)]
         message: Unchoke,
     },
+    Election {
+        #[serde(flatten)]
+        message: Election,
+    },
 }
 
 impl Message {
@@ -614,6 +651,7 @@ impl Message {
             Self::AuditResult { ref message } => message.sender(),
             Self::Choke { ref message } => message.sender(),
             Self::Unchoke { ref message } => message.sender(),
+            Self::Election { ref message } => message.sender(),
         }
     }
 
@@ -627,6 +665,7 @@ impl Message {
             Self::AuditResult { ref message } => message.timestamp(),
             Self::Choke { ref message } => message.timestamp(),
             Self::Unchoke { ref message } => message.timestamp(),
+            Self::Election { ref message } => message.timestamp(),
         }
     }
 
@@ -640,6 +679,7 @@ impl Message {
             Self::AuditResult { ref message } => message.msg_id(),
             Self::Choke { ref message } => message.msg_id(),
             Self::Unchoke { ref message } => message.msg_id(),
+            Self::Election { ref message } => message.msg_id(),
         }
     }
 }
@@ -649,8 +689,8 @@ impl Message {
 mod test {
     use crate::node::Id;
     use crate::protocol::{
-        AuditResult, Choke, Hello, Message, Peer, PeerList, Ping, Pong,
-        Unchoke, ViewEvent,
+        AuditResult, Choke, Election, Hello, Message, Peer, PeerList, Ping,
+        Pong, Unchoke, ViewEvent,
     };
 
     const NINETEEN_EIGHTY_FOUR: jiff::Timestamp =
@@ -986,6 +1026,32 @@ mod test {
                 sender: Id::new("alice".to_owned()),
                 timestamp: NINETEEN_EIGHTY_FOUR,
                 msg_id: "a1b2c3d4".to_owned(),
+            },
+        };
+
+        assert_eq!(constructed, deserialized);
+    }
+
+    #[test]
+    fn deserialize_election() {
+        let json = r#"
+        {
+            "type": "ELECTION",
+            "sender": "alice",
+            "timestamp": "1984-01-01T00:00:00Z",
+            "msg_id": "a1b2c3d4",
+            "term": 3,
+            "reputation": 0.85
+        }"#;
+        let deserialized: Message = serde_json::from_str(json).unwrap();
+
+        let constructed: Message = Message::Election {
+            message: Election {
+                sender: Id::new("alice".to_owned()),
+                timestamp: NINETEEN_EIGHTY_FOUR,
+                msg_id: "a1b2c3d4".to_owned(),
+                term: 3,
+                reputation: 0.85,
             },
         };
 
