@@ -632,6 +632,39 @@ impl ElectionOk {
     }
 }
 
+#[derive(
+    Debug, Clone, PartialEq, PartialOrd, Default, Serialize, Deserialize,
+)]
+pub struct Coordinator {
+    sender: Id,
+    timestamp: jiff::Timestamp,
+    msg_id: String,
+    term: u64,
+    reputation: f64,
+}
+
+impl Coordinator {
+    pub const fn sender(&self) -> &Id {
+        &self.sender
+    }
+
+    pub const fn timestamp(&self) -> jiff::Timestamp {
+        self.timestamp
+    }
+
+    pub fn msg_id(&self) -> &str {
+        &self.msg_id
+    }
+
+    pub const fn term(&self) -> u64 {
+        self.term
+    }
+
+    pub const fn reputation(&self) -> f64 {
+        self.reputation
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, PartialOrd, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum Message {
@@ -675,6 +708,10 @@ pub enum Message {
         #[serde(flatten)]
         message: ElectionOk,
     },
+    Coordinator {
+        #[serde(flatten)]
+        message: Coordinator,
+    },
 }
 
 impl Message {
@@ -690,6 +727,7 @@ impl Message {
             Self::Unchoke { ref message } => message.sender(),
             Self::Election { ref message } => message.sender(),
             Self::ElectionOk { ref message } => message.sender(),
+            Self::Coordinator { ref message } => message.sender(),
         }
     }
 
@@ -705,6 +743,7 @@ impl Message {
             Self::Unchoke { ref message } => message.timestamp(),
             Self::Election { ref message } => message.timestamp(),
             Self::ElectionOk { ref message } => message.timestamp(),
+            Self::Coordinator { ref message } => message.timestamp(),
         }
     }
 
@@ -720,6 +759,7 @@ impl Message {
             Self::Unchoke { ref message } => message.msg_id(),
             Self::Election { ref message } => message.msg_id(),
             Self::ElectionOk { ref message } => message.msg_id(),
+            Self::Coordinator { ref message } => message.msg_id(),
         }
     }
 }
