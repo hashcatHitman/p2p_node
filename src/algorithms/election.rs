@@ -208,12 +208,15 @@ impl ElectionNode {
     }
 
     pub fn receive_election_ok(
-        &self,
-        sender: Id,
-        term: u64,
+        &mut self,
+        sender: &Id,
+        term: u64, // this is unused... but part of the API, for some reason
         sender_reputation: f64,
     ) {
-        todo!()
+        self.got_ok = true;
+        self.log(&format!(
+                "Received ELECTION_OK from {sender} (rep={sender_reputation:.3}). Backing off."
+        ));
     }
 
     pub fn receive_coordinator(&self, sender: Id, term: u64) -> bool {
