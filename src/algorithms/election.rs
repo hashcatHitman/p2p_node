@@ -116,8 +116,57 @@ impl ElectionNode {
         }
     }
 
-    pub fn start_election(&self) -> Vec<(Id, u64, f64)> {
-        todo!()
+    pub fn start_election(&mut self) -> Vec<(Id, u64, f64)> {
+        self.term += 1;
+        self.state = ElectionStatus::Candidate;
+        self.election_in_progress = true;
+        self.election_start = time::Instant::now();
+        self.got_ok = false;
+
+        let my_rep = if self.is_bot {
+            (self.get_reputation)(self.node_id.clone())
+        } else {
+            0.0
+        };
+        let alive = (self.get_alive_peers)();
+
+        let mut outgoing = Vec::new();
+        for bot_id in &self.bot_ids {
+            if *bot_id == self.node_id {
+                continue;
+            }
+            if !alive.contains(bot_id) {
+                continue;
+            }
+
+            let bot_rep = (self.get_reputation)(bot_id.clone());
+            let error_margin = 0.000_000_1;
+            if (bot_rep > my_rep)
+                || ((bot_rep - my_rep).abs() < error_margin
+                    && *bot_id > self.node_id)
+            {
+                outgoing.push((bot_id.clone(), self.term, my_rep));
+            }
+        }
+
+        if outgoing.is_empty() && self.is_bot {
+            self.log(&format!(
+                "No higher-rep bots alive. Declaring self as leader (term={})",
+                self.term
+            ));
+            self.state = ElectionStatus::Leader;
+            self.current_leader = Some(self.node_id.clone());
+            self.election_in_progress = false;
+            self.last_leader_contact = time::Instant::now();
+        }
+
+        self.log(&format!(
+            "Election started (term={}, rep={my_rep:.3}). Challenging {} higher-rep bots.",
+            self.term,
+            outgoing.len()
+        ));
+
+        outgoing
     }
 
     pub fn receive_election(
