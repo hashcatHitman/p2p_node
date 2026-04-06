@@ -170,12 +170,41 @@ impl ElectionNode {
     }
 
     pub fn receive_election(
-        &self,
+        &mut self,
         sender: Id,
         term: u64,
         sender_reputation: f64,
     ) -> Option<(Id, u64, f64)> {
-        todo!()
+        if term > self.term {
+            self.term = term;
+        }
+
+        let my_rep = if self.is_bot {
+            (self.get_reputation)(self.node_id.clone())
+        } else {
+            0.0
+        };
+
+        let error_margin = 0.000_000_1;
+        if self.is_bot
+            && ((my_rep > sender_reputation)
+                || ((sender_reputation - my_rep).abs() < error_margin
+                    && self.node_id > sender))
+        {
+            self.log(&format!(
+                "Received ELECTION from {sender} (rep={sender_reputation:.3}). I outrank (rep={my_rep:.3}). Sending OK."
+            ));
+
+            if !self.election_in_progress {
+                self.election_in_progress = true;
+                self.election_start = time::Instant::now();
+                self.got_ok = false;
+                self.state = ElectionStatus::Candidate;
+            }
+
+            return Some((sender, self.term, my_rep));
+        }
+        None
     }
 
     pub fn receive_election_ok(
