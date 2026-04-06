@@ -90,8 +90,30 @@ impl ElectionNode {
         }
     }
 
-    pub fn check_leader(&self) -> bool {
-        todo!()
+    /// Check if the current leader is responsive.
+    pub fn check_leader(&mut self) -> bool {
+        if self.election_in_progress {
+            return false;
+        }
+
+        match self.current_leader {
+            None => true,
+            Some(ref current_leader) => {
+                let alive = (self.get_alive_peers)();
+
+                if alive.contains(current_leader) {
+                    self.last_leader_contact = time::Instant::now();
+                } else {
+                    let elapsed = self.last_leader_contact.elapsed();
+                    if elapsed > self.leader_timeout {
+                        let elapsed = elapsed.as_secs();
+                        self.log(&format!("Leader {current_leader} is DEAD (no contact for {elapsed}s). Triggering election."));
+                        return true;
+                    }
+                }
+                false
+            }
+        }
     }
 
     pub fn start_election(&self) -> Vec<(Id, u64, f64)> {
