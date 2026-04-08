@@ -286,7 +286,13 @@ impl ReputationNode {
 }
 
 #[derive(Debug, Clone, Copy)]
-struct TotalCmpF64(f64);
+pub(crate) struct TotalCmpF64(f64);
+
+impl TotalCmpF64 {
+    pub(crate) const fn new(value: f64) -> Self {
+        Self(value)
+    }
+}
 
 impl PartialEq for TotalCmpF64 {
     fn eq(&self, other: &Self) -> bool {
