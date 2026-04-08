@@ -305,7 +305,9 @@ impl ElectionNode {
         self.log.push(format!("[ELECTION] {message}"));
     }
 
-    pub fn flush_log(&self) -> Vec<String> {
-        todo!()
+    pub fn flush_log(&mut self) -> Vec<String> {
+        let messages = self.log.clone();
+        self.log.clear();
+        messages
     }
 }
