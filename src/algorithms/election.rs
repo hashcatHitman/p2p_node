@@ -301,8 +301,8 @@ impl ElectionNode {
         todo!()
     }
 
-    pub fn log(&self, message: &str) {
-        todo!()
+    pub fn log(&mut self, message: &str) {
+        self.log.push(format!("[ELECTION] {message}"));
     }
 
     pub fn flush_log(&self) -> Vec<String> {
