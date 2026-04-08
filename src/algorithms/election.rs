@@ -297,8 +297,15 @@ impl ElectionNode {
             && self.current_leader.as_ref() == Some(&self.node_id)
     }
 
-    pub fn get_status(&self) {
-        todo!()
+    pub fn get_status(&self) -> String {
+        format!(
+            "State: {}\nTerm: {}\nCurrent Leader: {:?}\nElection in Progress: {}\nIs Payment Server: {}",
+            self.state,
+            self.term,
+            self.current_leader,
+            self.election_in_progress,
+            self.is_active_payment_server()
+        )
     }
 
     pub fn log(&mut self, message: &str) {
