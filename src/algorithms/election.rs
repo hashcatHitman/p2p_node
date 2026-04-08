@@ -293,7 +293,8 @@ impl ElectionNode {
     }
 
     pub fn is_active_payment_server(&self) -> bool {
-        todo!()
+        self.state == ElectionStatus::Leader
+            && self.current_leader.as_ref() == Some(&self.node_id)
     }
 
     pub fn get_status(&self) {
