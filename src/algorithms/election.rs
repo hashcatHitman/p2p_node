@@ -219,8 +219,24 @@ impl ElectionNode {
         ));
     }
 
-    pub fn receive_coordinator(&self, sender: Id, term: u64) -> bool {
-        todo!()
+    pub fn receive_coordinator(&mut self, sender: Id, term: u64) -> bool {
+        if term < self.term {
+            self.log(&format!(
+                "Ignoring stale COORDINATOR from {sender} (term={term} < {})",
+                self.term
+            ));
+            false
+        } else {
+            let log_message =
+                format!("New leader: {sender} (term={term}). I am FOLLOWER.");
+            self.term = term;
+            self.current_leader = Some(sender);
+            self.state = ElectionStatus::Follower;
+            self.election_in_progress = false;
+            self.last_leader_contact = time::Instant::now();
+            self.log(&log_message);
+            true
+        }
     }
 
     pub fn check_election_timeout(&self) -> Option<bool> {
