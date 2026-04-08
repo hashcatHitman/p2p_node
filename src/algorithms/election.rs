@@ -289,7 +289,7 @@ impl ElectionNode {
     }
 
     pub fn get_coordinator_targets(&self) -> Vec<Id> {
-        todo!()
+        (self.get_alive_peers)()
     }
 
     pub fn is_active_payment_server(&self) -> bool {
