@@ -24,6 +24,7 @@ use core::fmt;
 use core::fmt::Display;
 use std::time;
 
+use crate::algorithms::reputation::TotalCmpF64;
 use crate::node::Id;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -239,8 +240,52 @@ impl ElectionNode {
         }
     }
 
-    pub fn check_election_timeout(&self) -> Option<bool> {
-        todo!()
+    pub fn check_election_timeout(&mut self) -> Option<bool> {
+        if !self.election_in_progress {
+            return None;
+        }
+
+        let elapsed = self.election_start.elapsed();
+        if elapsed < self.election_timeout {
+            return None;
+        }
+
+        self.election_in_progress = false;
+
+        if self.got_ok {
+            self.state = ElectionStatus::Follower;
+            self.log("Election timeout: received OK, waiting for COORDINATOR.");
+            return Some(false);
+        }
+
+        if self.is_bot {
+            self.state = ElectionStatus::Leader;
+            self.current_leader = Some(self.node_id.clone());
+            self.last_leader_contact = time::Instant::now();
+            self.log(&format!(
+                "Election timeout: no OK received. I am LEADER (term={})",
+                self.term
+            ));
+            Some(true)
+        } else {
+            let alive_bots = (self.get_alive_peers)()
+                .into_iter()
+                .filter(|peer_id| self.bot_ids.contains(peer_id))
+                .max_by_key(|bot_id| {
+                    TotalCmpF64::new((self.get_reputation)(bot_id.clone()))
+                });
+
+            if let Some(best_bot) = alive_bots {
+                let log_message = format!(
+                    "Student election timeout: designating {best_bot} as leader."
+                );
+                self.current_leader = Some(best_bot);
+                self.log(&log_message);
+            }
+
+            self.state = ElectionStatus::Follower;
+            Some(false)
+        }
     }
 
     pub fn get_coordinator_targets(&self) -> Vec<Id> {
