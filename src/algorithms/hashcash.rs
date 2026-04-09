@@ -120,3 +120,11 @@ fn verify_stamp<M: Stamp + Serialize + Clone>(
     // can just throw a `to_lowercase` on `pow_data.hash`.
     Some(hash.starts_with(&expected_prefix) && hash == pow_data.hash)
 }
+
+pub fn stamp_message<M: Stamp + Serialize + Clone>(
+    message: &mut M,
+    difficulty: Option<u8>,
+) {
+    let pow = mine_stamp(message, difficulty, None);
+    message.assign_pow(pow);
+}
