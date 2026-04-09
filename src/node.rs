@@ -25,8 +25,8 @@ use crate::algorithms::hashcash::stamp_message;
 use crate::algorithms::heartbeat::HeartbeatNode;
 use crate::algorithms::reputation::ReputationNode;
 use crate::protocol::{
-    AuditResult, Choke, Hello, Message, PeerList, Ping, Pong, Unchoke,
-    ViewEvent,
+    AuditResult, Choke, Election, Hello, Message, PeerList, Ping, Pong,
+    Unchoke, ViewEvent,
 };
 
 #[derive(
@@ -375,7 +375,7 @@ impl P2PNode {
             }
             Message::Choke { ref message } => self.handle_choke(message),
             Message::Unchoke { ref message } => self.handle_unchoke(message),
-            Message::Election { ref message } => todo!("{:?}", message),
+            Message::Election { ref message } => self.handle_election(message),
             Message::ElectionOk { ref message } => todo!("{:?}", message),
             Message::Coordinator { ref message } => todo!("{:?}", message),
             Message::Payment { ref message } => todo!("{:?}", message),
@@ -531,6 +531,18 @@ impl P2PNode {
     pub fn handle_unchoke(&self, message: &Unchoke) {
         let node_id = message.sender();
         crate::log(&self.node_id, &format!("Unchoked by {node_id}"));
+    }
+
+    pub fn handle_election(&self, message: &Election) {
+        let sender = message.sender();
+        let term = message.term();
+        let reputation = message.reputation();
+        crate::log(
+            &self.node_id,
+            &format!(
+                "[ELECTION] {sender} started election (term={term}, rep={reputation:.2})"
+            ),
+        );
     }
 
     #[expect(
