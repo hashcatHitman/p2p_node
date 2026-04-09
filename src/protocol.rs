@@ -876,6 +876,24 @@ impl Coordinator {
     }
 }
 
+impl Stamp for Coordinator {
+    fn difficulty(&self) -> u8 {
+        Self::ELECTION
+    }
+
+    fn assign_pow(&mut self, pow: Option<ProofOfWork>) {
+        self.pow = pow;
+    }
+
+    fn remove_pow(&mut self) -> Option<ProofOfWork> {
+        self.pow.take()
+    }
+
+    fn pow(&self) -> Option<&ProofOfWork> {
+        self.pow.as_ref()
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, PartialOrd, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum Message {
