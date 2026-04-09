@@ -107,3 +107,16 @@ fn mine_stamp<M: Stamp + Serialize + Clone>(
 
     None
 }
+
+fn verify_stamp<M: Stamp + Serialize + Clone>(
+    message: &M,
+    pow_data: &ProofOfWork,
+) -> Option<bool> {
+    let canon = canonical(message).ok()?;
+    let attempt = format!("{canon}:{}", pow_data.nonce);
+    let hash = lower::encode_string(&Sha256::digest(attempt));
+    let expected_prefix = "0".repeat(pow_data.difficulty.into());
+    // Assumption: hashes always use lowercase. If this proves to be wrong, I
+    // can just throw a `to_lowercase` on `pow_data.hash`.
+    Some(hash.starts_with(&expected_prefix) && hash == pow_data.hash)
+}
