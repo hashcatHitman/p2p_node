@@ -993,6 +993,72 @@ impl Message {
     }
 }
 
+impl Stamp for Message {
+    fn difficulty(&self) -> u8 {
+        match *self {
+            Self::Hello { ref message } => message.difficulty(),
+            Self::PeerList { ref message } => message.difficulty(),
+            Self::Ping { ref message } => message.difficulty(),
+            Self::Pong { ref message } => message.difficulty(),
+            Self::ViewEvent { ref message } => message.difficulty(),
+            Self::AuditResult { ref message } => message.difficulty(),
+            Self::Choke { ref message } => message.difficulty(),
+            Self::Unchoke { ref message } => message.difficulty(),
+            Self::Election { ref message } => message.difficulty(),
+            Self::ElectionOk { ref message } => message.difficulty(),
+            Self::Coordinator { ref message } => message.difficulty(),
+        }
+    }
+
+    fn assign_pow(&mut self, pow: Option<ProofOfWork>) {
+        match *self {
+            Self::Hello { ref mut message } => message.assign_pow(pow),
+            Self::PeerList { ref mut message } => message.assign_pow(pow),
+            Self::Ping { ref mut message } => message.assign_pow(pow),
+            Self::Pong { ref mut message } => message.assign_pow(pow),
+            Self::ViewEvent { ref mut message } => message.assign_pow(pow),
+            Self::AuditResult { ref mut message } => message.assign_pow(pow),
+            Self::Choke { ref mut message } => message.assign_pow(pow),
+            Self::Unchoke { ref mut message } => message.assign_pow(pow),
+            Self::Election { ref mut message } => message.assign_pow(pow),
+            Self::ElectionOk { ref mut message } => message.assign_pow(pow),
+            Self::Coordinator { ref mut message } => message.assign_pow(pow),
+        }
+    }
+
+    fn remove_pow(&mut self) -> Option<ProofOfWork> {
+        match *self {
+            Self::Hello { ref mut message } => message.remove_pow(),
+            Self::PeerList { ref mut message } => message.remove_pow(),
+            Self::Ping { ref mut message } => message.remove_pow(),
+            Self::Pong { ref mut message } => message.remove_pow(),
+            Self::ViewEvent { ref mut message } => message.remove_pow(),
+            Self::AuditResult { ref mut message } => message.remove_pow(),
+            Self::Choke { ref mut message } => message.remove_pow(),
+            Self::Unchoke { ref mut message } => message.remove_pow(),
+            Self::Election { ref mut message } => message.remove_pow(),
+            Self::ElectionOk { ref mut message } => message.remove_pow(),
+            Self::Coordinator { ref mut message } => message.remove_pow(),
+        }
+    }
+
+    fn pow(&self) -> Option<&ProofOfWork> {
+        match *self {
+            Self::Hello { ref message } => message.pow(),
+            Self::PeerList { ref message } => message.pow(),
+            Self::Ping { ref message } => message.pow(),
+            Self::Pong { ref message } => message.pow(),
+            Self::ViewEvent { ref message } => message.pow(),
+            Self::AuditResult { ref message } => message.pow(),
+            Self::Choke { ref message } => message.pow(),
+            Self::Unchoke { ref message } => message.pow(),
+            Self::Election { ref message } => message.pow(),
+            Self::ElectionOk { ref message } => message.pow(),
+            Self::Coordinator { ref message } => message.pow(),
+        }
+    }
+}
+
 #[expect(clippy::missing_panics_doc, reason = "tests tend to do that")]
 #[cfg(test)]
 mod test {
