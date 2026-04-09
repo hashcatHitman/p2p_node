@@ -850,6 +850,8 @@ pub struct Coordinator {
     msg_id: String,
     term: u64,
     reputation: f64,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pow: Option<ProofOfWork>,
 }
 
 impl Coordinator {
