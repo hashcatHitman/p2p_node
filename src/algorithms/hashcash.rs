@@ -128,3 +128,20 @@ pub fn stamp_message<M: Stamp + Serialize + Clone>(
     let pow = mine_stamp(message, difficulty, None);
     message.assign_pow(pow);
 }
+
+pub fn verify_message<M: Stamp + Serialize + Clone>(
+    message: &M,
+    min_difficulty: Option<u8>,
+) -> Option<bool> {
+    match message.pow() {
+        Some(pow) => {
+            if let Some(min) = min_difficulty
+                && pow.difficulty < min
+            {
+                return Some(false);
+            }
+            verify_stamp(message, pow)
+        }
+        None => Some(false),
+    }
+}
