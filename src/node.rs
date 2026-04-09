@@ -25,8 +25,8 @@ use crate::algorithms::hashcash::stamp_message;
 use crate::algorithms::heartbeat::HeartbeatNode;
 use crate::algorithms::reputation::ReputationNode;
 use crate::protocol::{
-    AuditResult, Choke, Election, ElectionOk, Hello, Message, PeerList, Ping,
-    Pong, Unchoke, ViewEvent,
+    AuditResult, Choke, Coordinator, Election, ElectionOk, Hello, Message,
+    PeerList, Ping, Pong, Unchoke, ViewEvent,
 };
 
 #[derive(
@@ -379,7 +379,9 @@ impl P2PNode {
             Message::ElectionOk { ref message } => {
                 self.handle_election_ok(message);
             }
-            Message::Coordinator { ref message } => todo!("{:?}", message),
+            Message::Coordinator { ref message } => {
+                self.handle_coordinator(message);
+            }
             Message::Payment { ref message } => todo!("{:?}", message),
         }
     }
@@ -555,6 +557,30 @@ impl P2PNode {
                 "[ELECTION] {sender} sent ELECTION_OK (outranks the challenger)"
             ),
         );
+    }
+
+    pub fn handle_coordinator(&mut self, message: &Coordinator) {
+        let sender = message.sender();
+        let term = message.term();
+        let reputation = message.reputation();
+
+        if term >= self.current_term {
+            self.current_payment_server = Some(sender.clone());
+            self.current_term = term;
+            crate::log(
+                &self.node_id,
+                &format!(
+                    "[ELECTION] Payment Server: {sender} (term={term}, rep={reputation:.3})"
+                ),
+            );
+        } else {
+            crate::log(
+                &self.node_id,
+                &format!(
+                    "[ELECTION] Ignored stale COORDINATOR from {sender} (term={term})"
+                ),
+            );
+        }
     }
 
     #[expect(
