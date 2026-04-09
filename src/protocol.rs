@@ -473,6 +473,8 @@ pub struct ViewEvent {
     count: u64,
     #[serde(skip_serializing_if = "Option::is_none")]
     ad_id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pow: Option<ProofOfWork>,
 }
 
 impl ViewEvent {
@@ -493,6 +495,7 @@ impl ViewEvent {
             content_id,
             count,
             ad_id,
+            pow: None,
         }
     }
 
@@ -1000,6 +1003,7 @@ mod test {
                 content_id: "show:midnight-run".to_owned(),
                 count: 150,
                 ad_id: Some("ad-7".to_owned()),
+                pow: None,
             },
         };
 
@@ -1030,6 +1034,7 @@ mod test {
                 content_id: "show:midnight-run".to_owned(),
                 count: 150,
                 ad_id: None,
+                pow: None,
             },
         };
 
@@ -1059,6 +1064,7 @@ mod test {
                 content_id: "show:midnight-run".to_owned(),
                 count: 150,
                 ad_id: None,
+                pow: None,
             },
         };
 
