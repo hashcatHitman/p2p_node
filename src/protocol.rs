@@ -400,6 +400,8 @@ pub struct Pong {
     timestamp: jiff::Timestamp,
     msg_id: String,
     seq: u16,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pow: Option<ProofOfWork>,
 }
 
 impl Pong {
@@ -411,6 +413,7 @@ impl Pong {
                 .timestamp(),
             msg_id: uuid::Uuid::new_v4().to_string(),
             seq,
+            pow: None,
         }
     }
 
@@ -948,6 +951,7 @@ mod test {
                 timestamp: NINETEEN_EIGHTY_FOUR,
                 msg_id: "a1b2c3d4".to_owned(),
                 seq: 42,
+                pow: None,
             },
         };
 
