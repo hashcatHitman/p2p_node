@@ -25,8 +25,8 @@ use crate::algorithms::hashcash::stamp_message;
 use crate::algorithms::heartbeat::HeartbeatNode;
 use crate::algorithms::reputation::ReputationNode;
 use crate::protocol::{
-    AuditResult, Choke, Election, Hello, Message, PeerList, Ping, Pong,
-    Unchoke, ViewEvent,
+    AuditResult, Choke, Election, ElectionOk, Hello, Message, PeerList, Ping,
+    Pong, Unchoke, ViewEvent,
 };
 
 #[derive(
@@ -376,7 +376,9 @@ impl P2PNode {
             Message::Choke { ref message } => self.handle_choke(message),
             Message::Unchoke { ref message } => self.handle_unchoke(message),
             Message::Election { ref message } => self.handle_election(message),
-            Message::ElectionOk { ref message } => todo!("{:?}", message),
+            Message::ElectionOk { ref message } => {
+                self.handle_election_ok(message);
+            }
             Message::Coordinator { ref message } => todo!("{:?}", message),
             Message::Payment { ref message } => todo!("{:?}", message),
         }
@@ -541,6 +543,16 @@ impl P2PNode {
             &self.node_id,
             &format!(
                 "[ELECTION] {sender} started election (term={term}, rep={reputation:.2})"
+            ),
+        );
+    }
+
+    pub fn handle_election_ok(&self, message: &ElectionOk) {
+        let sender = message.sender();
+        crate::log(
+            &self.node_id,
+            &format!(
+                "[ELECTION] {sender} sent ELECTION_OK (outranks the challenger)"
             ),
         );
     }
