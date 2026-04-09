@@ -52,3 +52,43 @@ impl ViewEventRecord {
         self.ad_id.as_deref()
     }
 }
+
+#[derive(Debug, Clone)]
+pub struct PaymentRecord {
+    from: Id,
+    content_id: String,
+    amount: f64,
+    agreed_count: u64,
+}
+
+impl PaymentRecord {
+    pub const fn new(
+        from: Id,
+        content_id: String,
+        amount: f64,
+        agreed_count: u64,
+    ) -> Self {
+        Self {
+            from,
+            content_id,
+            amount,
+            agreed_count,
+        }
+    }
+
+    pub const fn from(&self) -> &Id {
+        &self.from
+    }
+
+    pub fn content_id(&self) -> &str {
+        &self.content_id
+    }
+
+    pub const fn amount(&self) -> f64 {
+        self.amount
+    }
+
+    pub const fn agreed_count(&self) -> u64 {
+        self.agreed_count
+    }
+}
