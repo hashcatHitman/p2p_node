@@ -20,6 +20,7 @@ publish = false
 [dependencies]
 aws-config = { version = "1.8.15", features = ["behavior-version-latest"] }
 aws-sdk-sqs = "1.96.0"
+base16ct = { version = "1.0.0", features = ["alloc"] }
 jiff = { version = "0.2.23", features = ["serde"] }
 owo-colors = "4.3.0"
 rand = "0.10.0"
