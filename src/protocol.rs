@@ -386,6 +386,7 @@ pub struct ViewEvent {
     event_id: String,
     content_id: String,
     count: u64,
+    #[serde(skip_serializing_if = "Option::is_none")]
     ad_id: Option<String>,
 }
 
@@ -449,6 +450,7 @@ pub struct AuditResult {
     content_id: String,
     agreed_count: u64,
     confidence: f64,
+    #[serde(skip_serializing_if = "Option::is_none")]
     voters: Option<Vec<Id>>,
 }
 
