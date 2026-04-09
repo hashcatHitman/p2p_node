@@ -23,7 +23,7 @@ use jiff::tz::TimeZone;
 use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value, json};
 
-use crate::algorithms::hashcash::ProofOfWork;
+use crate::algorithms::hashcash::{ProofOfWork, Stamp};
 use crate::node::Id;
 
 #[derive(
@@ -224,6 +224,24 @@ impl Hello {
 
     pub fn queue_url(&self) -> &str {
         &self.queue_url
+    }
+}
+
+impl Stamp for Hello {
+    fn difficulty(&self) -> u8 {
+        Self::LOW_FREQUENCY
+    }
+
+    fn assign_pow(&mut self, pow: Option<ProofOfWork>) {
+        self.pow = pow;
+    }
+
+    fn remove_pow(&mut self) -> Option<ProofOfWork> {
+        self.pow.take()
+    }
+
+    fn pow(&self) -> Option<&ProofOfWork> {
+        self.pow.as_ref()
     }
 }
 
