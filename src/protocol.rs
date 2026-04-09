@@ -647,6 +647,8 @@ pub struct Choke {
     sender: Id,
     timestamp: jiff::Timestamp,
     msg_id: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pow: Option<ProofOfWork>,
 }
 
 impl Choke {
@@ -1223,6 +1225,7 @@ mod test {
                 sender: Id::new("alice".to_owned()),
                 timestamp: NINETEEN_EIGHTY_FOUR,
                 msg_id: "a1b2c3d4".to_owned(),
+                pow: None,
             },
         };
 
