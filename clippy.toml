@@ -3,6 +3,10 @@
 # SPDX-License-Identifier: Apache-2.0 OR MIT
 
 allowed-duplicate-crates = [
+    "block-buffer",
+    "crypto-common",
+    "digest",
+    "sha2",
     "hashbrown",
     "cpufeatures",
     "h2",
