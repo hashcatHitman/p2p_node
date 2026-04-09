@@ -233,6 +233,9 @@ pub struct P2PNode {
     messages_received: u32,
     messages_sent: u32,
     rounds: u32,
+    // At least two of these could have been done with the `ElectionNode`, but
+    // the function pointers are making it hard to use... and the assigment
+    // doesn't seem to want me to use it anyway???
     current_payment_server: Option<Id>,
     current_term: u64,
     payments_received: Vec<PaymentRecord>,
