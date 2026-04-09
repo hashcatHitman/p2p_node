@@ -262,6 +262,8 @@ pub struct PeerList {
     timestamp: jiff::Timestamp,
     msg_id: String,
     peers: Vec<Peer>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pow: Option<ProofOfWork>,
 }
 
 impl PeerList {
@@ -273,6 +275,7 @@ impl PeerList {
                 .timestamp(),
             msg_id: uuid::Uuid::new_v4().to_string(),
             peers,
+            pow: None,
         }
     }
 
@@ -856,6 +859,7 @@ mod test {
                             .to_owned(),
                     },
                 ],
+                pow: None,
             },
         };
 
