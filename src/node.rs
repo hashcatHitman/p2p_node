@@ -19,7 +19,7 @@ use rand::seq::IteratorRandom as _;
 use serde::{Deserialize, Serialize};
 
 use crate::algorithms::choking::ChokingNode;
-use crate::algorithms::content::ViewEventRecord;
+use crate::algorithms::content::{PaymentRecord, ViewEventRecord};
 use crate::algorithms::gossip::GossipNode;
 use crate::algorithms::hashcash::stamp_message;
 use crate::algorithms::heartbeat::HeartbeatNode;
@@ -235,6 +235,7 @@ pub struct P2PNode {
     rounds: u32,
     current_payment_server: Option<Id>,
     current_term: u64,
+    payments_received: Vec<PaymentRecord>,
 }
 
 impl P2PNode {
@@ -288,6 +289,7 @@ impl P2PNode {
             rounds: 0,
             current_payment_server: None,
             current_term: 0,
+            payments_received: Vec::new(),
         };
         crate::log(
             &this.node_id,
