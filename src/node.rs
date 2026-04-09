@@ -21,6 +21,7 @@ use serde::{Deserialize, Serialize};
 use crate::algorithms::choking::ChokingNode;
 use crate::algorithms::content::ViewEventRecord;
 use crate::algorithms::gossip::GossipNode;
+use crate::algorithms::hashcash::stamp_message;
 use crate::algorithms::heartbeat::HeartbeatNode;
 use crate::algorithms::reputation::ReputationNode;
 use crate::protocol::{
@@ -322,6 +323,21 @@ impl P2PNode {
                     },
                 )
                 .await;
+        }
+    }
+
+    pub async fn stamp_and_send(
+        &mut self,
+        target_node_id: Id,
+        message: Message,
+    ) -> bool {
+        let mut message = message;
+        stamp_message(&mut message, None);
+        if self.transport.send(target_node_id, message).await {
+            self.messages_sent += 1;
+            true
+        } else {
+            false
         }
     }
 
