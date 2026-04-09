@@ -797,6 +797,8 @@ pub struct ElectionOk {
     msg_id: String,
     term: u64,
     reputation: f64,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pow: Option<ProofOfWork>,
 }
 
 impl ElectionOk {
@@ -1360,6 +1362,7 @@ mod test {
                 msg_id: "a1b2c3d4".to_owned(),
                 term: 3,
                 reputation: 0.85,
+                pow: None,
             },
         };
 
