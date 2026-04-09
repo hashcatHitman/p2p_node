@@ -16,7 +16,6 @@
 )]
 #![expect(
     clippy::module_name_repetitions,
-    unused,
     clippy::use_debug,
     clippy::iter_over_hash_type,
     clippy::arithmetic_side_effects,
