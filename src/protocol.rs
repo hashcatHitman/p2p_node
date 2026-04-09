@@ -434,6 +434,24 @@ impl Pong {
     }
 }
 
+impl Stamp for Pong {
+    fn difficulty(&self) -> u8 {
+        Self::LOW_FREQUENCY
+    }
+
+    fn assign_pow(&mut self, pow: Option<ProofOfWork>) {
+        self.pow = pow;
+    }
+
+    fn remove_pow(&mut self) -> Option<ProofOfWork> {
+        self.pow.take()
+    }
+
+    fn pow(&self) -> Option<&ProofOfWork> {
+        self.pow.as_ref()
+    }
+}
+
 #[derive(
     Debug,
     Clone,
