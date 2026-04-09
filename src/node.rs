@@ -26,7 +26,7 @@ use crate::algorithms::heartbeat::HeartbeatNode;
 use crate::algorithms::reputation::ReputationNode;
 use crate::protocol::{
     AuditResult, Choke, Coordinator, Election, ElectionOk, Hello, Message,
-    PeerList, Ping, Pong, Unchoke, ViewEvent,
+    Payment, PeerList, Ping, Pong, Unchoke, ViewEvent,
 };
 
 #[derive(
@@ -382,7 +382,7 @@ impl P2PNode {
             Message::Coordinator { ref message } => {
                 self.handle_coordinator(message);
             }
-            Message::Payment { ref message } => todo!("{:?}", message),
+            Message::Payment { ref message } => self.handle_payment(message),
         }
     }
 
@@ -581,6 +581,27 @@ impl P2PNode {
                 ),
             );
         }
+    }
+
+    pub fn handle_payment(&mut self, message: &Payment) {
+        let sender = message.sender();
+        let content_id = message.content_id();
+        let amount = message.amount();
+        let agreed_count = message.agreed_count();
+
+        self.payments_received.push(PaymentRecord::new(
+            sender.clone(),
+            content_id.to_owned(),
+            amount,
+            agreed_count,
+        ));
+
+        crate::log(
+            &self.node_id,
+            &format!(
+                "[PAYMENT] {sender} paid ${amount:.4} for {content_id} ({agreed_count} verified views)"
+            ),
+        );
     }
 
     #[expect(
