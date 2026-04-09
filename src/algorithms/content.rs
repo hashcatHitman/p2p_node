@@ -7,7 +7,7 @@
 use crate::node::Id;
 
 #[derive(Debug, Clone)]
-pub struct ViewEventRecord {
+pub(crate) struct ViewEventRecord {
     peer_id: Id,
     event_id: String,
     content_id: String,
@@ -16,7 +16,7 @@ pub struct ViewEventRecord {
 }
 
 impl ViewEventRecord {
-    pub const fn new(
+    pub(crate) const fn new(
         peer_id: Id,
         event_id: String,
         content_id: String,
@@ -32,29 +32,29 @@ impl ViewEventRecord {
         }
     }
 
-    pub const fn peer_id(&self) -> &Id {
+    const fn peer_id(&self) -> &Id {
         &self.peer_id
     }
 
-    pub fn event_id(&self) -> &str {
+    fn event_id(&self) -> &str {
         &self.event_id
     }
 
-    pub fn content_id(&self) -> &str {
+    fn content_id(&self) -> &str {
         &self.content_id
     }
 
-    pub const fn count(&self) -> u64 {
+    pub(crate) const fn count(&self) -> u64 {
         self.count
     }
 
-    pub fn ad_id(&self) -> Option<&str> {
+    fn ad_id(&self) -> Option<&str> {
         self.ad_id.as_deref()
     }
 }
 
 #[derive(Debug, Clone)]
-pub struct PaymentRecord {
+pub(crate) struct PaymentRecord {
     from: Id,
     content_id: String,
     amount: f64,
@@ -62,7 +62,7 @@ pub struct PaymentRecord {
 }
 
 impl PaymentRecord {
-    pub const fn new(
+    pub(crate) const fn new(
         from: Id,
         content_id: String,
         amount: f64,
@@ -76,19 +76,19 @@ impl PaymentRecord {
         }
     }
 
-    pub const fn from(&self) -> &Id {
+    const fn from(&self) -> &Id {
         &self.from
     }
 
-    pub fn content_id(&self) -> &str {
+    fn content_id(&self) -> &str {
         &self.content_id
     }
 
-    pub const fn amount(&self) -> f64 {
+    const fn amount(&self) -> f64 {
         self.amount
     }
 
-    pub const fn agreed_count(&self) -> u64 {
+    const fn agreed_count(&self) -> u64 {
         self.agreed_count
     }
 }

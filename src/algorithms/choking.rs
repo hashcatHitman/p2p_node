@@ -30,7 +30,7 @@ use crate::node::Id;
 
 /// Tracks a single peer's contribution and choking state.
 #[derive(Debug, Clone)]
-pub struct PeerTracker {
+struct PeerTracker {
     node_id: Id,
     contributed: u32,
     received: u32,
@@ -40,7 +40,7 @@ pub struct PeerTracker {
 }
 
 impl PeerTracker {
-    pub const fn new(node_id: Id) -> Self {
+    const fn new(node_id: Id) -> Self {
         Self {
             node_id,
             contributed: 0,
@@ -52,7 +52,7 @@ impl PeerTracker {
     }
 
     /// How much they give vs. how much they take. Higher is better.
-    pub fn reciprocity_ratio(&self) -> f64 {
+    fn reciprocity_ratio(&self) -> f64 {
         match self.received {
             0 => f64::from(self.contributed),
             _ => f64::from(self.contributed) / f64::from(self.received),
@@ -72,7 +72,7 @@ impl Display for PeerTracker {
 }
 
 #[derive(Debug, Clone)]
-pub struct ChokingNode {
+pub(crate) struct ChokingNode {
     node_id: Id,
     max_unchoked: u8,
     optimistic_interval: u32,
@@ -83,7 +83,7 @@ pub struct ChokingNode {
 }
 
 impl ChokingNode {
-    pub fn new(
+    pub(crate) fn new(
         node_id: Id,
         max_unchoked: u8,
         optimistic_interval: u32,
@@ -100,7 +100,7 @@ impl ChokingNode {
     }
 
     /// Register a new peer. New peers start choked.
-    pub fn add_peer(&mut self, node_id: Id) {
+    pub(crate) fn add_peer(&mut self, node_id: Id) {
         if !self.peers.contains_key(&node_id) {
             drop(
                 self.peers
@@ -110,7 +110,7 @@ impl ChokingNode {
     }
 
     /// Record that a peer contributed `units` to us.
-    pub fn record_contribution(&mut self, from_peer: &Id, units: u32) {
+    pub(crate) fn record_contribution(&mut self, from_peer: &Id, units: u32) {
         if let Some(peer) = self.peers.get_mut(from_peer) {
             peer.contributed += units;
         }
@@ -121,7 +121,7 @@ impl ChokingNode {
         clippy::todo,
         reason = "record where? why does the assignment include this API?"
     )]
-    pub fn record_serving(&self, to_peer: &Id, units: u32) {
+    fn record_serving(&self, to_peer: &Id, units: u32) {
         todo!()
     }
 
@@ -138,7 +138,7 @@ impl ChokingNode {
     ///      Log those changes via self._log.
     ///
     /// Note: Only unchoke peers where is_interested == True.
-    pub fn run_choking_round(&mut self) {
+    pub(crate) fn run_choking_round(&mut self) {
         self.round += 1;
 
         let interested: Vec<(Id, PeerTracker)> = self
@@ -211,7 +211,7 @@ impl ChokingNode {
     }
 
     /// Return node_ids of all currently unchoked peers.
-    pub fn get_unchoked_peers(&self) -> Vec<Id> {
+    fn get_unchoked_peers(&self) -> Vec<Id> {
         self.peers
             .iter()
             .filter(|&(_id, state)| !state.is_choked)
@@ -220,7 +220,7 @@ impl ChokingNode {
     }
 
     /// Return node_ids of all currently choked peers.
-    pub fn get_choked_peers(&self) -> Vec<Id> {
+    fn get_choked_peers(&self) -> Vec<Id> {
         self.peers
             .iter()
             .filter(|&(_id, state)| state.is_choked)
@@ -228,7 +228,7 @@ impl ChokingNode {
             .collect()
     }
 
-    pub fn flush_log(&mut self) -> Vec<String> {
+    pub(crate) fn flush_log(&mut self) -> Vec<String> {
         let messages = self.log.clone();
         self.log.clear();
         messages

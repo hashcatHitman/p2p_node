@@ -28,7 +28,7 @@ use std::collections::HashMap;
 use crate::node::Id;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub enum PeerStatus {
+enum PeerStatus {
     Alive,
     Suspect,
     Dead,
@@ -47,7 +47,7 @@ impl Display for PeerStatus {
 
 /// Tracked state for a single monitored peer.
 #[derive(Debug, Clone)]
-pub struct PeerState {
+struct PeerState {
     node_id: Id,
     status: PeerStatus,
     consecutive_misses: u8,
@@ -57,7 +57,7 @@ pub struct PeerState {
 }
 
 impl PeerState {
-    pub const fn new(node_id: Id) -> Self {
+    const fn new(node_id: Id) -> Self {
         Self {
             node_id,
             status: PeerStatus::Alive,
@@ -68,7 +68,7 @@ impl PeerState {
         }
     }
 
-    pub fn response_rate(&self) -> f64 {
+    fn response_rate(&self) -> f64 {
         match self.total_pings_sent {
             0 => 1.0,
             _ => {
@@ -93,7 +93,7 @@ impl Display for PeerState {
 }
 
 #[derive(Debug, Clone)]
-pub struct HeartbeatNode {
+pub(crate) struct HeartbeatNode {
     node_id: Id,
     miss_threshold: u8,
     grace_period: u8,
@@ -102,7 +102,11 @@ pub struct HeartbeatNode {
 }
 
 impl HeartbeatNode {
-    pub fn new(node_id: Id, miss_threshold: u8, grace_period: u8) -> Self {
+    pub(crate) fn new(
+        node_id: Id,
+        miss_threshold: u8,
+        grace_period: u8,
+    ) -> Self {
         Self {
             node_id,
             miss_threshold,
@@ -113,7 +117,7 @@ impl HeartbeatNode {
     }
 
     /// Register a new peer to monitor (start in ALIVE state).
-    pub fn add_peer(&mut self, node_id: Id) {
+    pub(crate) fn add_peer(&mut self, node_id: Id) {
         if !self.peers.contains_key(&node_id) {
             drop(self.peers.insert(node_id.clone(), PeerState::new(node_id)));
         }
@@ -126,7 +130,7 @@ impl HeartbeatNode {
     ///
     /// Returns:
     ///     List of peer_ids that should receive a PING this round.
-    pub fn send_pings(&mut self, current_round: u32) -> Vec<Id> {
+    pub(crate) fn send_pings(&mut self, current_round: u32) -> Vec<Id> {
         let mut pinged = Vec::new();
 
         for (peer_id, state) in &mut self.peers {
@@ -148,7 +152,7 @@ impl HeartbeatNode {
     /// Args:
     ///     from_node:     node_id of the peer who replied
     ///     current_round: current poll round number
-    pub fn receive_pong(&mut self, from_node: &Id, current_round: u32) {
+    pub(crate) fn receive_pong(&mut self, from_node: &Id, current_round: u32) {
         if let Some(peer) = self.peers.get_mut(from_node) {
             peer.total_pongs_received += 1;
             peer.last_pong_round = current_round;
@@ -173,7 +177,7 @@ impl HeartbeatNode {
     /// Args:
     ///     peer_id:       node_id of the non-responding peer
     ///     current_round: current poll round number
-    pub fn record_miss(&mut self, peer_id: &Id, current_round: u32) {
+    fn record_miss(&mut self, peer_id: &Id, current_round: u32) {
         if let Some(peer) = self.peers.get_mut(peer_id) {
             if peer.status == PeerStatus::Dead {
                 return;
@@ -196,7 +200,7 @@ impl HeartbeatNode {
     }
 
     /// Return node_ids of all ALIVE peers.
-    pub fn get_alive_peers(&self) -> Vec<Id> {
+    pub(crate) fn get_alive_peers(&self) -> Vec<Id> {
         self.peers
             .iter()
             .filter(|&(_id, state)| state.status == PeerStatus::Alive)
@@ -205,7 +209,7 @@ impl HeartbeatNode {
     }
 
     /// Return node_ids of all SUSPECT peers.
-    pub fn get_suspect_peers(&self) -> Vec<Id> {
+    fn get_suspect_peers(&self) -> Vec<Id> {
         self.peers
             .iter()
             .filter(|&(_id, state)| state.status == PeerStatus::Suspect)
@@ -214,7 +218,7 @@ impl HeartbeatNode {
     }
 
     /// Return node_ids of all DEAD peers.
-    pub fn get_dead_peers(&self) -> Vec<Id> {
+    fn get_dead_peers(&self) -> Vec<Id> {
         self.peers
             .iter()
             .filter(|&(_id, state)| state.status == PeerStatus::Dead)
@@ -223,7 +227,7 @@ impl HeartbeatNode {
     }
 
     /// Remove DEAD peers from the tracking table.
-    pub fn prune_dead(&mut self) {
+    fn prune_dead(&mut self) {
         let dead = self.get_dead_peers();
 
         for peer in dead {
@@ -231,7 +235,7 @@ impl HeartbeatNode {
         }
     }
 
-    pub fn flush_log(&mut self) -> Vec<String> {
+    fn flush_log(&mut self) -> Vec<String> {
         let messages = self.log.clone();
         self.log.clear();
         messages

@@ -51,7 +51,7 @@ impl Id {
         Self { node_id }
     }
 
-    pub fn as_str(&self) -> &str {
+    fn as_str(&self) -> &str {
         &self.node_id
     }
 }
@@ -63,7 +63,7 @@ impl Display for Id {
 }
 
 #[derive(Debug, Clone)]
-pub struct SqsTransport {
+struct SqsTransport {
     sqs: Client,
     queue_url_cache: HashMap<Id, String>,
 }
@@ -74,14 +74,14 @@ struct Resources {
 }
 
 impl SqsTransport {
-    pub fn new(sqs: Client) -> Self {
+    fn new(sqs: Client) -> Self {
         Self {
             sqs,
             queue_url_cache: HashMap::new(),
         }
     }
 
-    pub fn load_resources(&mut self, disk_cache: File) -> bool {
+    fn load_resources(&mut self, disk_cache: File) -> bool {
         let disk_cache = io::BufReader::new(disk_cache);
         let cache: Result<Resources, serde_json::Error> =
             serde_json::from_reader(disk_cache);
@@ -95,7 +95,7 @@ impl SqsTransport {
         }
     }
 
-    pub async fn get_queue_url(&mut self, node_id: Id) -> Option<String> {
+    async fn get_queue_url(&mut self, node_id: Id) -> Option<String> {
         if let Some(url) = self.queue_url_cache.get(&node_id) {
             return Some(url.clone());
         }
@@ -113,7 +113,7 @@ impl SqsTransport {
             })
     }
 
-    pub async fn send(&mut self, target_node_id: Id, message: Message) -> bool {
+    async fn send(&mut self, target_node_id: Id, message: Message) -> bool {
         if let Some(url) = self.get_queue_url(target_node_id.clone()).await {
             match serde_json::to_string(&message) {
                 Ok(serialized) => {
@@ -143,7 +143,7 @@ impl SqsTransport {
         false
     }
 
-    pub async fn receive(
+    async fn receive(
         &mut self,
         node_id: Id,
         max_messages: i32,
@@ -182,7 +182,7 @@ impl SqsTransport {
         messages
     }
 
-    pub async fn delete(&mut self, node_id: Id, receipt_handle: String) {
+    async fn delete(&mut self, node_id: Id, receipt_handle: String) {
         if let Some(url) = self.get_queue_url(node_id.clone()).await {
             match self
                 .sqs
@@ -335,7 +335,7 @@ impl P2PNode {
         }
     }
 
-    pub async fn stamp_and_send(
+    async fn stamp_and_send(
         &mut self,
         target_node_id: Id,
         message: Message,
@@ -350,7 +350,7 @@ impl P2PNode {
         }
     }
 
-    pub async fn handle_message(&mut self, message: &Message) {
+    async fn handle_message(&mut self, message: &Message) {
         let node_id = message.sender();
 
         if *node_id == self.node_id {
@@ -386,7 +386,7 @@ impl P2PNode {
         }
     }
 
-    pub async fn handle_hello(&mut self, message: &Hello) {
+    async fn handle_hello(&mut self, message: &Hello) {
         let node_id = message.sender();
 
         let queue_url = message.queue_url();
@@ -420,7 +420,7 @@ impl P2PNode {
         }
     }
 
-    pub fn handle_peer_list(&mut self, message: &PeerList) {
+    fn handle_peer_list(&mut self, message: &PeerList) {
         let sender_id = message.sender();
 
         let incoming = message.peers();
@@ -442,7 +442,7 @@ impl P2PNode {
         }
     }
 
-    pub async fn handle_ping(&mut self, message: &Ping) {
+    async fn handle_ping(&mut self, message: &Ping) {
         let node_id = message.sender();
         let seq = message.seq();
         crate::log(
@@ -465,7 +465,7 @@ impl P2PNode {
         self.reputation.record_contribution(node_id, 1);
     }
 
-    pub fn handle_pong(&mut self, message: &Pong) {
+    fn handle_pong(&mut self, message: &Pong) {
         let node_id = message.sender();
         let seq: u16 = message.seq();
         crate::log(
@@ -477,7 +477,7 @@ impl P2PNode {
         self.reputation.record_heartbeat(node_id, true);
     }
 
-    pub fn handle_view_event(&mut self, message: &ViewEvent) {
+    fn handle_view_event(&mut self, message: &ViewEvent) {
         let node_id = message.sender();
 
         let event_id = message.event_id();
@@ -510,7 +510,7 @@ impl P2PNode {
         self.reputation.record_contribution(node_id, 1);
     }
 
-    pub fn handle_audit_result(&mut self, message: &AuditResult) {
+    fn handle_audit_result(&mut self, message: &AuditResult) {
         let node_id = message.sender();
 
         let content_id = message.content_id();
@@ -527,17 +527,17 @@ impl P2PNode {
         self.reputation.record_contribution(node_id, 1);
     }
 
-    pub fn handle_choke(&self, message: &Choke) {
+    fn handle_choke(&self, message: &Choke) {
         let node_id = message.sender();
         crate::log(&self.node_id, &format!("Choked by {node_id}"));
     }
 
-    pub fn handle_unchoke(&self, message: &Unchoke) {
+    fn handle_unchoke(&self, message: &Unchoke) {
         let node_id = message.sender();
         crate::log(&self.node_id, &format!("Unchoked by {node_id}"));
     }
 
-    pub fn handle_election(&self, message: &Election) {
+    fn handle_election(&self, message: &Election) {
         let sender = message.sender();
         let term = message.term();
         let reputation = message.reputation();
@@ -549,7 +549,7 @@ impl P2PNode {
         );
     }
 
-    pub fn handle_election_ok(&self, message: &ElectionOk) {
+    fn handle_election_ok(&self, message: &ElectionOk) {
         let sender = message.sender();
         crate::log(
             &self.node_id,
@@ -559,7 +559,7 @@ impl P2PNode {
         );
     }
 
-    pub fn handle_coordinator(&mut self, message: &Coordinator) {
+    fn handle_coordinator(&mut self, message: &Coordinator) {
         let sender = message.sender();
         let term = message.term();
         let reputation = message.reputation();
@@ -583,7 +583,7 @@ impl P2PNode {
         }
     }
 
-    pub fn handle_payment(&mut self, message: &Payment) {
+    fn handle_payment(&mut self, message: &Payment) {
         let sender = message.sender();
         let content_id = message.content_id();
         let amount = message.amount();
@@ -609,7 +609,7 @@ impl P2PNode {
         reason = "I don't plan on sending these futures between threads and
         would rather not use a panicking RNG."
     )]
-    pub async fn run_periodic_tasks(&mut self) {
+    async fn run_periodic_tasks(&mut self) {
         let now = time::Instant::now();
 
         if now - self.last_gossip
@@ -655,7 +655,7 @@ impl P2PNode {
         }
     }
 
-    pub async fn do_gossip(&mut self) {
+    async fn do_gossip(&mut self) {
         if let Some(target) = self.gossip.pick_gossip_target() {
             let message = PeerList::new(
                 self.node_id.clone(),
@@ -677,7 +677,7 @@ impl P2PNode {
         }
     }
 
-    pub async fn do_heartbeat(&mut self) {
+    async fn do_heartbeat(&mut self) {
         self.ping_seq += 1;
         let ping = Ping::new(self.node_id.clone(), self.ping_seq);
 
@@ -708,14 +708,14 @@ impl P2PNode {
         }
     }
 
-    pub fn do_choking(&mut self) {
+    fn do_choking(&mut self) {
         self.choking.run_choking_round();
         for log in self.choking.flush_log() {
             crate::log(&self.node_id, &log);
         }
     }
 
-    pub fn do_reputation(&mut self) {
+    fn do_reputation(&mut self) {
         self.reputation.update_all_scores();
         crate::log(&self.node_id, "Updated scores");
     }
@@ -725,7 +725,7 @@ impl P2PNode {
         reason = "I don't plan on sending these futures between threads and
         would rather not use a panicking RNG."
     )]
-    pub async fn do_publish(&mut self) {
+    async fn do_publish(&mut self) {
         match self.view_counts.iter_mut().choose(&mut rand::rng()) {
             Some((&key, count)) => {
                 *count += 1;
@@ -782,7 +782,7 @@ impl P2PNode {
         reason = "I don't plan on sending these futures between threads and
         would rather not use a panicking RNG."
     )]
-    pub async fn do_audit(&mut self) {
+    async fn do_audit(&mut self) {
         match self
             .view_events
             .iter()
@@ -881,12 +881,12 @@ impl P2PNode {
         crate::log(&self.node_id, "Main loop exited.");
     }
 
-    pub fn shutdown(&mut self) {
+    fn shutdown(&mut self) {
         crate::log(&self.node_id, "Shutting down...");
         self.running = false;
     }
 
-    pub fn print_status(&self) {
+    fn print_status(&self) {
         crate::error(&self.node_id, "todo!: print_status");
     }
 }

@@ -38,14 +38,14 @@ use sha2::{Digest as _, Sha256};
     Serialize,
     Deserialize,
 )]
-pub struct ProofOfWork {
+pub(crate) struct ProofOfWork {
     nonce: u64,
     difficulty: u8,
     // The actual type sha2 returns is not print/serde friendly, so...
     hash: String,
 }
 
-pub trait Stamp {
+pub(crate) trait Stamp {
     const LOW_FREQUENCY: u8 = 2;
 
     const CONTENT: u8 = 3;
@@ -121,7 +121,7 @@ fn verify_stamp<M: Stamp + Serialize + Clone>(
     Some(hash.starts_with(&expected_prefix) && hash == pow_data.hash)
 }
 
-pub fn stamp_message<M: Stamp + Serialize + Clone>(
+pub(crate) fn stamp_message<M: Stamp + Serialize + Clone>(
     message: &mut M,
     difficulty: Option<u8>,
 ) {
@@ -129,7 +129,7 @@ pub fn stamp_message<M: Stamp + Serialize + Clone>(
     message.assign_pow(pow);
 }
 
-pub fn verify_message<M: Stamp + Serialize + Clone>(
+fn verify_message<M: Stamp + Serialize + Clone>(
     message: &M,
     min_difficulty: Option<u8>,
 ) -> Option<bool> {

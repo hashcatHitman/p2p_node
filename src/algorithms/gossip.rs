@@ -32,7 +32,7 @@ use crate::protocol::Peer;
 
 /// A single known peer in the gossip table.
 #[derive(Debug, Clone)]
-pub struct PeerEntry {
+pub(crate) struct PeerEntry {
     node_id: Id,
     // TODO: there is probably a URL newtype somewhere I could be using.
     queue_url: String,
@@ -46,7 +46,7 @@ pub struct PeerEntry {
 }
 
 impl PeerEntry {
-    pub const fn new(node_id: Id, queue_url: String) -> Self {
+    const fn new(node_id: Id, queue_url: String) -> Self {
         Self {
             node_id,
             queue_url,
@@ -55,11 +55,11 @@ impl PeerEntry {
         }
     }
 
-    pub const fn time_to_live_mut(&mut self) -> &mut i8 {
+    pub(crate) const fn time_to_live_mut(&mut self) -> &mut i8 {
         &mut self.time_to_live
     }
 
-    pub fn queue_url(&self) -> &str {
+    pub(crate) fn queue_url(&self) -> &str {
         &self.queue_url
     }
 
@@ -76,7 +76,7 @@ impl Display for PeerEntry {
 
 /// A node that participates in gossip-based peer discovery.
 #[derive(Debug, Clone)]
-pub struct GossipNode {
+pub(crate) struct GossipNode {
     /// This node's identifier.
     node_id: Id,
     // TODO: there is probably a URL newtype somewhere I could be using.
@@ -87,7 +87,7 @@ pub struct GossipNode {
 }
 
 impl GossipNode {
-    pub fn new(node_id: Id, queue_url: String) -> Self {
+    pub(crate) fn new(node_id: Id, queue_url: String) -> Self {
         Self {
             node_id,
             queue_url,
@@ -96,11 +96,11 @@ impl GossipNode {
         }
     }
 
-    pub const fn peers(&self) -> &HashMap<Id, PeerEntry> {
+    pub(crate) const fn peers(&self) -> &HashMap<Id, PeerEntry> {
         &self.peers
     }
 
-    pub const fn peers_mut(&mut self) -> &mut HashMap<Id, PeerEntry> {
+    pub(crate) const fn peers_mut(&mut self) -> &mut HashMap<Id, PeerEntry> {
         &mut self.peers
     }
 
@@ -113,7 +113,7 @@ impl GossipNode {
     /// Args:
     ///    node_id:   The peer's identifier.
     ///    queue_url: The peer's SQS queue URL.
-    pub fn add_peer(&mut self, node_id: Id, queue_url: String) {
+    pub(crate) fn add_peer(&mut self, node_id: Id, queue_url: String) {
         if self.node_id != node_id && !self.peers.contains_key(&node_id) {
             drop(
                 self.peers.insert(
@@ -128,7 +128,7 @@ impl GossipNode {
     ///
     /// Returns a list of {"node_id": ..., "queue_url": ...} dicts for all
     /// known non-expired peers. Include yourself so recipients know your URL.
-    pub fn get_peer_list_message(&self) -> Vec<Peer> {
+    pub(crate) fn get_peer_list_message(&self) -> Vec<Peer> {
         let mut entries = Vec::new();
         for peer_entry in self.peers.values() {
             let peer = Peer {
@@ -158,7 +158,7 @@ impl GossipNode {
     ///
     /// Returns:
     ///    Number of new peers discovered (not previously in our table).
-    pub fn receive_peer_list(
+    pub(crate) fn receive_peer_list(
         &mut self,
         incoming: &[Peer],
         sender_id: &Id,
@@ -192,7 +192,7 @@ impl GossipNode {
     ///
     /// A peer that has not been mentioned in any gossip for `ttl` rounds
     /// should be removed from the table.
-    pub fn age_entries(&mut self) {
+    pub(crate) fn age_entries(&mut self) {
         let mut expired = Vec::new();
         for (peer_id, entry) in &mut self.peers {
             entry.time_to_live -= 1;
@@ -209,7 +209,7 @@ impl GossipNode {
 
     /// Pick a random peer to send a PEER_LIST to.
     /// Returns None if no peers are known yet.
-    pub fn pick_gossip_target(&self) -> Option<Id> {
+    pub(crate) fn pick_gossip_target(&self) -> Option<Id> {
         if self.peers.is_empty() {
             None
         } else {
@@ -217,7 +217,7 @@ impl GossipNode {
         }
     }
 
-    pub fn known_peer_count(&self) -> usize {
+    fn known_peer_count(&self) -> usize {
         self.peers.len()
     }
 }

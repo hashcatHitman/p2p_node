@@ -42,11 +42,11 @@ pub mod protocol;
 /// ```rust
 /// println!("{}", p2p_node::read_a_book())
 /// ```
-pub const fn read_a_book() -> &'static str {
+const fn read_a_book() -> &'static str {
     "you are so smart!!"
 }
 
-pub fn log(node_id: &Id, message: &str) {
+fn log(node_id: &Id, message: &str) {
     let timestamp = jiff::Timestamp::now()
         .to_zoned(TimeZone::UTC)
         .strftime("%FT%T%.8fZ");
@@ -60,7 +60,7 @@ pub fn log(node_id: &Id, message: &str) {
     );
 }
 
-pub fn warn(node_id: &Id, message: &str) {
+fn warn(node_id: &Id, message: &str) {
     let timestamp = jiff::Timestamp::now()
         .to_zoned(TimeZone::UTC)
         .strftime("%FT%T%.8fZ");
@@ -74,7 +74,7 @@ pub fn warn(node_id: &Id, message: &str) {
     );
 }
 
-pub fn error(node_id: &Id, message: &str) {
+fn error(node_id: &Id, message: &str) {
     let timestamp = jiff::Timestamp::now()
         .to_zoned(TimeZone::UTC)
         .strftime("%FT%T%.8fZ");

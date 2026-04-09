@@ -38,7 +38,7 @@ use crate::node::Id;
     Serialize,
     Deserialize,
 )]
-pub enum MessageKind {
+enum MessageKind {
     Hello,
     PeerList,
     Ping,
@@ -84,7 +84,7 @@ impl FromStr for MessageKind {
     }
 }
 
-pub fn base(kind: MessageKind, sender: &Id) -> Map<String, Value> {
+fn base(kind: MessageKind, sender: &Id) -> Map<String, Value> {
     let mut message = Map::new();
     let timestamp = jiff::Timestamp::now()
         .to_zoned(TimeZone::UTC)
@@ -101,34 +101,34 @@ pub fn base(kind: MessageKind, sender: &Id) -> Map<String, Value> {
     message
 }
 
-pub fn hello(sender: &Id, queue_url: String) -> Map<String, Value> {
+fn hello(sender: &Id, queue_url: String) -> Map<String, Value> {
     let mut message = base(MessageKind::Hello, sender);
     drop(message.insert("queue_url".to_owned(), Value::String(queue_url)));
     message
 }
 
-pub fn peer_list(sender: &Id, peers: &[Value]) -> Map<String, Value> {
+fn peer_list(sender: &Id, peers: &[Value]) -> Map<String, Value> {
     let mut message = base(MessageKind::PeerList, sender);
 
     drop(message.insert("peers".to_owned(), json!(peers)));
     message
 }
 
-pub fn ping(sender: &Id, sequence: u16) -> Map<String, Value> {
+fn ping(sender: &Id, sequence: u16) -> Map<String, Value> {
     let mut message = base(MessageKind::Ping, sender);
 
     drop(message.insert("seq".to_owned(), json!(sequence)));
     message
 }
 
-pub fn pong(sender: &Id, sequence: u16) -> Map<String, Value> {
+fn pong(sender: &Id, sequence: u16) -> Map<String, Value> {
     let mut message = base(MessageKind::Pong, sender);
 
     drop(message.insert("seq".to_owned(), json!(sequence)));
     message
 }
 
-pub fn view_event(
+fn view_event(
     sender: &Id,
     event_id: String,
     content_id: String,
@@ -143,7 +143,7 @@ pub fn view_event(
     message
 }
 
-pub fn audit_result(
+fn audit_result(
     sender: &Id,
     content_id: String,
     agreed_count: u64,
@@ -160,18 +160,18 @@ pub fn audit_result(
     message
 }
 
-pub fn choke(sender: &Id) -> Map<String, Value> {
+fn choke(sender: &Id) -> Map<String, Value> {
     base(MessageKind::Choke, sender)
 }
 
-pub fn unchoke(sender: &Id) -> Map<String, Value> {
+fn unchoke(sender: &Id) -> Map<String, Value> {
     base(MessageKind::Unchoke, sender)
 }
 
 #[derive(
     Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize,
 )]
-pub struct Peer {
+pub(crate) struct Peer {
     pub node_id: Id,
     pub queue_url: String,
 }
@@ -188,7 +188,7 @@ pub struct Peer {
     Serialize,
     Deserialize,
 )]
-pub struct Hello {
+pub(crate) struct Hello {
     sender: Id,
     timestamp: jiff::Timestamp,
     msg_id: String,
@@ -198,7 +198,7 @@ pub struct Hello {
 }
 
 impl Hello {
-    pub fn new(sender: Id, queue_url: String) -> Self {
+    pub(crate) fn new(sender: Id, queue_url: String) -> Self {
         Self {
             sender,
             timestamp: jiff::Timestamp::now()
@@ -210,19 +210,19 @@ impl Hello {
         }
     }
 
-    pub const fn sender(&self) -> &Id {
+    pub(crate) const fn sender(&self) -> &Id {
         &self.sender
     }
 
-    pub const fn timestamp(&self) -> jiff::Timestamp {
+    const fn timestamp(&self) -> jiff::Timestamp {
         self.timestamp
     }
 
-    pub fn msg_id(&self) -> &str {
+    fn msg_id(&self) -> &str {
         &self.msg_id
     }
 
-    pub fn queue_url(&self) -> &str {
+    pub(crate) fn queue_url(&self) -> &str {
         &self.queue_url
     }
 }
@@ -257,7 +257,7 @@ impl Stamp for Hello {
     Serialize,
     Deserialize,
 )]
-pub struct PeerList {
+pub(crate) struct PeerList {
     sender: Id,
     timestamp: jiff::Timestamp,
     msg_id: String,
@@ -267,7 +267,7 @@ pub struct PeerList {
 }
 
 impl PeerList {
-    pub fn new(sender: Id, peers: Vec<Peer>) -> Self {
+    pub(crate) fn new(sender: Id, peers: Vec<Peer>) -> Self {
         Self {
             sender,
             timestamp: jiff::Timestamp::now()
@@ -279,19 +279,19 @@ impl PeerList {
         }
     }
 
-    pub const fn sender(&self) -> &Id {
+    pub(crate) const fn sender(&self) -> &Id {
         &self.sender
     }
 
-    pub const fn timestamp(&self) -> jiff::Timestamp {
+    const fn timestamp(&self) -> jiff::Timestamp {
         self.timestamp
     }
 
-    pub fn msg_id(&self) -> &str {
+    fn msg_id(&self) -> &str {
         &self.msg_id
     }
 
-    pub fn peers(&self) -> &[Peer] {
+    pub(crate) fn peers(&self) -> &[Peer] {
         &self.peers
     }
 }
@@ -326,7 +326,7 @@ impl Stamp for PeerList {
     Serialize,
     Deserialize,
 )]
-pub struct Ping {
+pub(crate) struct Ping {
     sender: Id,
     timestamp: jiff::Timestamp,
     msg_id: String,
@@ -336,7 +336,7 @@ pub struct Ping {
 }
 
 impl Ping {
-    pub fn new(sender: Id, seq: u16) -> Self {
+    pub(crate) fn new(sender: Id, seq: u16) -> Self {
         Self {
             sender,
             timestamp: jiff::Timestamp::now()
@@ -348,19 +348,19 @@ impl Ping {
         }
     }
 
-    pub const fn sender(&self) -> &Id {
+    pub(crate) const fn sender(&self) -> &Id {
         &self.sender
     }
 
-    pub const fn timestamp(&self) -> jiff::Timestamp {
+    const fn timestamp(&self) -> jiff::Timestamp {
         self.timestamp
     }
 
-    pub fn msg_id(&self) -> &str {
+    fn msg_id(&self) -> &str {
         &self.msg_id
     }
 
-    pub const fn seq(&self) -> u16 {
+    pub(crate) const fn seq(&self) -> u16 {
         self.seq
     }
 }
@@ -395,7 +395,7 @@ impl Stamp for Ping {
     Serialize,
     Deserialize,
 )]
-pub struct Pong {
+pub(crate) struct Pong {
     sender: Id,
     timestamp: jiff::Timestamp,
     msg_id: String,
@@ -405,7 +405,7 @@ pub struct Pong {
 }
 
 impl Pong {
-    pub fn new(sender: Id, seq: u16) -> Self {
+    pub(crate) fn new(sender: Id, seq: u16) -> Self {
         Self {
             sender,
             timestamp: jiff::Timestamp::now()
@@ -417,19 +417,19 @@ impl Pong {
         }
     }
 
-    pub const fn sender(&self) -> &Id {
+    pub(crate) const fn sender(&self) -> &Id {
         &self.sender
     }
 
-    pub const fn timestamp(&self) -> jiff::Timestamp {
+    const fn timestamp(&self) -> jiff::Timestamp {
         self.timestamp
     }
 
-    pub fn msg_id(&self) -> &str {
+    fn msg_id(&self) -> &str {
         &self.msg_id
     }
 
-    pub const fn seq(&self) -> u16 {
+    pub(crate) const fn seq(&self) -> u16 {
         self.seq
     }
 }
@@ -464,7 +464,7 @@ impl Stamp for Pong {
     Serialize,
     Deserialize,
 )]
-pub struct ViewEvent {
+pub(crate) struct ViewEvent {
     sender: Id,
     timestamp: jiff::Timestamp,
     msg_id: String,
@@ -478,7 +478,7 @@ pub struct ViewEvent {
 }
 
 impl ViewEvent {
-    pub fn new(
+    pub(crate) fn new(
         sender: Id,
         event_id: String,
         content_id: String,
@@ -499,31 +499,31 @@ impl ViewEvent {
         }
     }
 
-    pub const fn sender(&self) -> &Id {
+    pub(crate) const fn sender(&self) -> &Id {
         &self.sender
     }
 
-    pub const fn timestamp(&self) -> jiff::Timestamp {
+    const fn timestamp(&self) -> jiff::Timestamp {
         self.timestamp
     }
 
-    pub fn msg_id(&self) -> &str {
+    fn msg_id(&self) -> &str {
         &self.msg_id
     }
 
-    pub fn event_id(&self) -> &str {
+    pub(crate) fn event_id(&self) -> &str {
         &self.event_id
     }
 
-    pub fn content_id(&self) -> &str {
+    pub(crate) fn content_id(&self) -> &str {
         &self.content_id
     }
 
-    pub const fn count(&self) -> u64 {
+    pub(crate) const fn count(&self) -> u64 {
         self.count
     }
 
-    pub fn ad_id(&self) -> Option<&str> {
+    pub(crate) fn ad_id(&self) -> Option<&str> {
         self.ad_id.as_deref()
     }
 }
@@ -549,7 +549,7 @@ impl Stamp for ViewEvent {
 #[derive(
     Debug, Clone, PartialEq, PartialOrd, Default, Serialize, Deserialize,
 )]
-pub struct AuditResult {
+pub(crate) struct AuditResult {
     sender: Id,
     timestamp: jiff::Timestamp,
     msg_id: String,
@@ -563,7 +563,7 @@ pub struct AuditResult {
 }
 
 impl AuditResult {
-    pub fn new(
+    pub(crate) fn new(
         sender: Id,
         content_id: String,
         agreed_count: u64,
@@ -584,31 +584,31 @@ impl AuditResult {
         }
     }
 
-    pub const fn sender(&self) -> &Id {
+    pub(crate) const fn sender(&self) -> &Id {
         &self.sender
     }
 
-    pub const fn timestamp(&self) -> jiff::Timestamp {
+    const fn timestamp(&self) -> jiff::Timestamp {
         self.timestamp
     }
 
-    pub fn msg_id(&self) -> &str {
+    fn msg_id(&self) -> &str {
         &self.msg_id
     }
 
-    pub fn content_id(&self) -> &str {
+    pub(crate) fn content_id(&self) -> &str {
         &self.content_id
     }
 
-    pub const fn agreed_count(&self) -> u64 {
+    pub(crate) const fn agreed_count(&self) -> u64 {
         self.agreed_count
     }
 
-    pub const fn confidence(&self) -> f64 {
+    pub(crate) const fn confidence(&self) -> f64 {
         self.confidence
     }
 
-    pub fn voters(&self) -> Option<&[Id]> {
+    pub(crate) fn voters(&self) -> Option<&[Id]> {
         self.voters.as_deref()
     }
 }
@@ -643,7 +643,7 @@ impl Stamp for AuditResult {
     Serialize,
     Deserialize,
 )]
-pub struct Choke {
+pub(crate) struct Choke {
     sender: Id,
     timestamp: jiff::Timestamp,
     msg_id: String,
@@ -652,15 +652,15 @@ pub struct Choke {
 }
 
 impl Choke {
-    pub const fn sender(&self) -> &Id {
+    pub(crate) const fn sender(&self) -> &Id {
         &self.sender
     }
 
-    pub const fn timestamp(&self) -> jiff::Timestamp {
+    const fn timestamp(&self) -> jiff::Timestamp {
         self.timestamp
     }
 
-    pub fn msg_id(&self) -> &str {
+    fn msg_id(&self) -> &str {
         &self.msg_id
     }
 }
@@ -695,7 +695,7 @@ impl Stamp for Choke {
     Serialize,
     Deserialize,
 )]
-pub struct Unchoke {
+pub(crate) struct Unchoke {
     sender: Id,
     timestamp: jiff::Timestamp,
     msg_id: String,
@@ -704,15 +704,15 @@ pub struct Unchoke {
 }
 
 impl Unchoke {
-    pub const fn sender(&self) -> &Id {
+    pub(crate) const fn sender(&self) -> &Id {
         &self.sender
     }
 
-    pub const fn timestamp(&self) -> jiff::Timestamp {
+    const fn timestamp(&self) -> jiff::Timestamp {
         self.timestamp
     }
 
-    pub fn msg_id(&self) -> &str {
+    fn msg_id(&self) -> &str {
         &self.msg_id
     }
 }
@@ -738,7 +738,7 @@ impl Stamp for Unchoke {
 #[derive(
     Debug, Clone, PartialEq, PartialOrd, Default, Serialize, Deserialize,
 )]
-pub struct Election {
+pub(crate) struct Election {
     sender: Id,
     timestamp: jiff::Timestamp,
     msg_id: String,
@@ -749,23 +749,23 @@ pub struct Election {
 }
 
 impl Election {
-    pub const fn sender(&self) -> &Id {
+    pub(crate) const fn sender(&self) -> &Id {
         &self.sender
     }
 
-    pub const fn timestamp(&self) -> jiff::Timestamp {
+    const fn timestamp(&self) -> jiff::Timestamp {
         self.timestamp
     }
 
-    pub fn msg_id(&self) -> &str {
+    fn msg_id(&self) -> &str {
         &self.msg_id
     }
 
-    pub const fn term(&self) -> u64 {
+    pub(crate) const fn term(&self) -> u64 {
         self.term
     }
 
-    pub const fn reputation(&self) -> f64 {
+    pub(crate) const fn reputation(&self) -> f64 {
         self.reputation
     }
 }
@@ -791,7 +791,7 @@ impl Stamp for Election {
 #[derive(
     Debug, Clone, PartialEq, PartialOrd, Default, Serialize, Deserialize,
 )]
-pub struct ElectionOk {
+pub(crate) struct ElectionOk {
     sender: Id,
     timestamp: jiff::Timestamp,
     msg_id: String,
@@ -802,23 +802,23 @@ pub struct ElectionOk {
 }
 
 impl ElectionOk {
-    pub const fn sender(&self) -> &Id {
+    pub(crate) const fn sender(&self) -> &Id {
         &self.sender
     }
 
-    pub const fn timestamp(&self) -> jiff::Timestamp {
+    const fn timestamp(&self) -> jiff::Timestamp {
         self.timestamp
     }
 
-    pub fn msg_id(&self) -> &str {
+    fn msg_id(&self) -> &str {
         &self.msg_id
     }
 
-    pub const fn term(&self) -> u64 {
+    const fn term(&self) -> u64 {
         self.term
     }
 
-    pub const fn reputation(&self) -> f64 {
+    const fn reputation(&self) -> f64 {
         self.reputation
     }
 }
@@ -844,7 +844,7 @@ impl Stamp for ElectionOk {
 #[derive(
     Debug, Clone, PartialEq, PartialOrd, Default, Serialize, Deserialize,
 )]
-pub struct Coordinator {
+pub(crate) struct Coordinator {
     sender: Id,
     timestamp: jiff::Timestamp,
     msg_id: String,
@@ -855,23 +855,23 @@ pub struct Coordinator {
 }
 
 impl Coordinator {
-    pub const fn sender(&self) -> &Id {
+    pub(crate) const fn sender(&self) -> &Id {
         &self.sender
     }
 
-    pub const fn timestamp(&self) -> jiff::Timestamp {
+    const fn timestamp(&self) -> jiff::Timestamp {
         self.timestamp
     }
 
-    pub fn msg_id(&self) -> &str {
+    fn msg_id(&self) -> &str {
         &self.msg_id
     }
 
-    pub const fn term(&self) -> u64 {
+    pub(crate) const fn term(&self) -> u64 {
         self.term
     }
 
-    pub const fn reputation(&self) -> f64 {
+    pub(crate) const fn reputation(&self) -> f64 {
         self.reputation
     }
 }
@@ -897,7 +897,7 @@ impl Stamp for Coordinator {
 #[derive(
     Debug, Clone, PartialEq, PartialOrd, Default, Serialize, Deserialize,
 )]
-pub struct Payment {
+pub(crate) struct Payment {
     sender: Id,
     timestamp: jiff::Timestamp,
     msg_id: String,
@@ -910,31 +910,31 @@ pub struct Payment {
 }
 
 impl Payment {
-    pub const fn sender(&self) -> &Id {
+    pub(crate) const fn sender(&self) -> &Id {
         &self.sender
     }
 
-    pub const fn timestamp(&self) -> jiff::Timestamp {
+    const fn timestamp(&self) -> jiff::Timestamp {
         self.timestamp
     }
 
-    pub fn msg_id(&self) -> &str {
+    fn msg_id(&self) -> &str {
         &self.msg_id
     }
 
-    pub fn content_id(&self) -> &str {
+    pub(crate) fn content_id(&self) -> &str {
         &self.content_id
     }
 
-    pub const fn agreed_count(&self) -> u64 {
+    pub(crate) const fn agreed_count(&self) -> u64 {
         self.agreed_count
     }
 
-    pub const fn amount(&self) -> f64 {
+    pub(crate) const fn amount(&self) -> f64 {
         self.amount
     }
 
-    pub fn audit_ref(&self) -> &str {
+    fn audit_ref(&self) -> &str {
         &self.audit_ref
     }
 }
@@ -959,7 +959,7 @@ impl Stamp for Payment {
 
 #[derive(Debug, Clone, PartialEq, PartialOrd, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "SCREAMING_SNAKE_CASE")]
-pub enum Message {
+pub(crate) enum Message {
     Hello {
         #[serde(flatten)]
         message: Hello,
@@ -1011,7 +1011,7 @@ pub enum Message {
 }
 
 impl Message {
-    pub const fn sender(&self) -> &Id {
+    pub(crate) const fn sender(&self) -> &Id {
         match *self {
             Self::Hello { ref message } => message.sender(),
             Self::PeerList { ref message } => message.sender(),
@@ -1028,7 +1028,7 @@ impl Message {
         }
     }
 
-    pub const fn timestamp(&self) -> jiff::Timestamp {
+    const fn timestamp(&self) -> jiff::Timestamp {
         match *self {
             Self::Hello { ref message } => message.timestamp(),
             Self::PeerList { ref message } => message.timestamp(),
@@ -1045,7 +1045,7 @@ impl Message {
         }
     }
 
-    pub fn msg_id(&self) -> &str {
+    fn msg_id(&self) -> &str {
         match *self {
             Self::Hello { ref message } => message.msg_id(),
             Self::PeerList { ref message } => message.msg_id(),

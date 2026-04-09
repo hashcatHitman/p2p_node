@@ -28,7 +28,7 @@ use crate::algorithms::reputation::TotalCmpF64;
 use crate::node::Id;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub enum ElectionStatus {
+enum ElectionStatus {
     Follower,
     Candidate,
     Leader,
@@ -46,7 +46,7 @@ impl Display for ElectionStatus {
 }
 
 #[derive(Debug, Clone)]
-pub struct ElectionNode {
+struct ElectionNode {
     node_id: Id,
     bot_ids: Vec<Id>,
     is_bot: bool,
@@ -65,7 +65,7 @@ pub struct ElectionNode {
 }
 
 impl ElectionNode {
-    pub fn new(
+    fn new(
         node_id: Id,
         bot_ids: Vec<Id>,
         get_reputation: fn(Id) -> f64,
@@ -92,7 +92,7 @@ impl ElectionNode {
     }
 
     /// Check if the current leader is responsive.
-    pub fn check_leader(&mut self) -> bool {
+    fn check_leader(&mut self) -> bool {
         if self.election_in_progress {
             return false;
         }
@@ -117,7 +117,7 @@ impl ElectionNode {
         }
     }
 
-    pub fn start_election(&mut self) -> Vec<(Id, u64, f64)> {
+    fn start_election(&mut self) -> Vec<(Id, u64, f64)> {
         self.term += 1;
         self.state = ElectionStatus::Candidate;
         self.election_in_progress = true;
@@ -170,7 +170,7 @@ impl ElectionNode {
         outgoing
     }
 
-    pub fn receive_election(
+    fn receive_election(
         &mut self,
         sender: Id,
         term: u64,
@@ -208,7 +208,7 @@ impl ElectionNode {
         None
     }
 
-    pub fn receive_election_ok(
+    fn receive_election_ok(
         &mut self,
         sender: &Id,
         term: u64, // this is unused... but part of the API, for some reason
@@ -220,7 +220,7 @@ impl ElectionNode {
         ));
     }
 
-    pub fn receive_coordinator(&mut self, sender: Id, term: u64) -> bool {
+    fn receive_coordinator(&mut self, sender: Id, term: u64) -> bool {
         if term < self.term {
             self.log(&format!(
                 "Ignoring stale COORDINATOR from {sender} (term={term} < {})",
@@ -240,7 +240,7 @@ impl ElectionNode {
         }
     }
 
-    pub fn check_election_timeout(&mut self) -> Option<bool> {
+    fn check_election_timeout(&mut self) -> Option<bool> {
         if !self.election_in_progress {
             return None;
         }
@@ -288,16 +288,16 @@ impl ElectionNode {
         }
     }
 
-    pub fn get_coordinator_targets(&self) -> Vec<Id> {
+    fn get_coordinator_targets(&self) -> Vec<Id> {
         (self.get_alive_peers)()
     }
 
-    pub fn is_active_payment_server(&self) -> bool {
+    fn is_active_payment_server(&self) -> bool {
         self.state == ElectionStatus::Leader
             && self.current_leader.as_ref() == Some(&self.node_id)
     }
 
-    pub fn get_status(&self) -> String {
+    fn get_status(&self) -> String {
         format!(
             "State: {}\nTerm: {}\nCurrent Leader: {:?}\nElection in Progress: {}\nIs Payment Server: {}",
             self.state,
@@ -308,11 +308,11 @@ impl ElectionNode {
         )
     }
 
-    pub fn log(&mut self, message: &str) {
+    fn log(&mut self, message: &str) {
         self.log.push(format!("[ELECTION] {message}"));
     }
 
-    pub fn flush_log(&mut self) -> Vec<String> {
+    fn flush_log(&mut self) -> Vec<String> {
         let messages = self.log.clone();
         self.log.clear();
         messages

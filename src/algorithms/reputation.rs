@@ -31,7 +31,7 @@ use crate::node::Id;
 
 /// Tracks reputation metrics for a single peer.
 #[derive(Debug, Clone)]
-pub struct ReputationRecord {
+struct ReputationRecord {
     node_id: Id,
     reports_total: u32,
     reports_accurate: u32,
@@ -44,7 +44,7 @@ pub struct ReputationRecord {
 }
 
 impl ReputationRecord {
-    pub const fn new(node_id: Id) -> Self {
+    const fn new(node_id: Id) -> Self {
         Self {
             node_id,
             reports_total: 0,
@@ -58,7 +58,7 @@ impl ReputationRecord {
         }
     }
 
-    pub fn accuracy(&self) -> f64 {
+    fn accuracy(&self) -> f64 {
         match self.reports_total {
             0 => 0.5,
             _ => {
@@ -67,7 +67,7 @@ impl ReputationRecord {
         }
     }
 
-    pub fn uptime(&self) -> f64 {
+    fn uptime(&self) -> f64 {
         match self.heartbeats_total {
             0 => 0.5,
             _ => {
@@ -77,7 +77,7 @@ impl ReputationRecord {
         }
     }
 
-    pub fn reciprocity(&self) -> f64 {
+    fn reciprocity(&self) -> f64 {
         let total = self.contributions + self.consumptions;
         match total {
             0 => 0.5,
@@ -85,7 +85,7 @@ impl ReputationRecord {
         }
     }
 
-    pub const fn trust_score(&self) -> f64 {
+    const fn trust_score(&self) -> f64 {
         self.trust_score
     }
 
@@ -97,7 +97,7 @@ impl ReputationRecord {
     ///
     /// The decay_factor pulls scores back toward 0.5 each round,
     /// preventing permanent entrenchment (good or bad).
-    pub fn recalculate_trust(&mut self) {
+    fn recalculate_trust(&mut self) {
         let raw = 0.1_f64.mul_add(
             self.reciprocity(),
             0.6_f64.mul_add(self.accuracy(), 0.3_f64 * self.uptime()),
@@ -126,14 +126,14 @@ impl Display for ReputationRecord {
 
 /// Tracks reputation for all known peers and computes weighted votes.
 #[derive(Debug, Clone)]
-pub struct ReputationNode {
+pub(crate) struct ReputationNode {
     node_id: Id,
     peers: HashMap<Id, ReputationRecord>,
     log: Vec<String>,
 }
 
 impl ReputationNode {
-    pub fn new(node_id: Id) -> Self {
+    pub(crate) fn new(node_id: Id) -> Self {
         Self {
             node_id,
             peers: HashMap::new(),
@@ -142,7 +142,7 @@ impl ReputationNode {
     }
 
     /// Register a new peer with a neutral trust score (0.5).
-    pub fn add_peer(&mut self, node_id: Id) {
+    pub(crate) fn add_peer(&mut self, node_id: Id) {
         if !self.peers.contains_key(&node_id) {
             drop(
                 self.peers
@@ -152,7 +152,7 @@ impl ReputationNode {
     }
 
     /// Record whether a peer's VIEW_EVENT report matched the audit majority.
-    pub fn record_report(&mut self, peer_id: &Id, was_accurate: bool) {
+    pub(crate) fn record_report(&mut self, peer_id: &Id, was_accurate: bool) {
         if let Some(peer) = self.peers.get_mut(peer_id) {
             peer.reports_total += 1;
 
@@ -163,7 +163,7 @@ impl ReputationNode {
     }
 
     /// Record a heartbeat event (whether the peer responded to a PING).
-    pub fn record_heartbeat(&mut self, peer_id: &Id, responded: bool) {
+    pub(crate) fn record_heartbeat(&mut self, peer_id: &Id, responded: bool) {
         if let Some(peer) = self.peers.get_mut(peer_id) {
             peer.heartbeats_total += 1;
 
@@ -174,21 +174,21 @@ impl ReputationNode {
     }
 
     /// Record that a peer contributed `units` of data/messages to us.
-    pub fn record_contribution(&mut self, peer_id: &Id, units: u32) {
+    pub(crate) fn record_contribution(&mut self, peer_id: &Id, units: u32) {
         if let Some(peer) = self.peers.get_mut(peer_id) {
             peer.contributions += units;
         }
     }
 
     /// Record that a peer consumed `units` from us.
-    pub fn record_consumption(&mut self, peer_id: &Id, units: u32) {
+    fn record_consumption(&mut self, peer_id: &Id, units: u32) {
         if let Some(peer) = self.peers.get_mut(peer_id) {
             peer.consumptions += units;
         }
     }
 
     /// Recalculate trust scores for all peers.
-    pub fn update_all_scores(&mut self) {
+    pub(crate) fn update_all_scores(&mut self) {
         for record in self.peers.values_mut() {
             record.recalculate_trust();
         }
@@ -207,7 +207,7 @@ impl ReputationNode {
     /// Returns:
     ///     (winning_count, confidence) where confidence is the winning
     ///     group's share of total weighted votes (0.0 to 1.0)
-    pub fn weighted_majority_vote(
+    pub(crate) fn weighted_majority_vote(
         &self,
         votes: &HashMap<Id, u64>,
         verbose: bool,
@@ -270,7 +270,7 @@ impl ReputationNode {
     }
 
     /// Return all peers sorted by trust score, highest first.
-    pub fn get_ranked_peers(&self) -> Vec<ReputationRecord> {
+    fn get_ranked_peers(&self) -> Vec<ReputationRecord> {
         let mut peer_ratings: Vec<ReputationRecord> =
             self.peers.values().cloned().collect();
         peer_ratings.sort_by_key(|record| TotalCmpF64(record.trust_score()));
@@ -278,7 +278,7 @@ impl ReputationNode {
         peer_ratings
     }
 
-    pub fn flush_log(&mut self) -> Vec<String> {
+    fn flush_log(&mut self) -> Vec<String> {
         let messages = self.log.clone();
         self.log.clear();
         messages
