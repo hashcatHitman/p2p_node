@@ -68,3 +68,16 @@ pub trait Stamp {
 
     fn pow(&self) -> Option<&ProofOfWork>;
 }
+
+#[expect(clippy::missing_errors_doc, reason = "later")]
+// Stamp isn't really needed here, but I'm keeping it as a bound to avoid using
+// this on types I didn't mean to.
+fn canonical<M: Stamp + Serialize + Clone>(
+    message: &M,
+) -> Result<String, serde_json::Error> {
+    let mut dupe = message.clone();
+    let pow = dupe.remove_pow();
+    let mut value = serde_json::to_value(dupe)?;
+    value.sort_all_objects();
+    Ok(value.to_string())
+}
