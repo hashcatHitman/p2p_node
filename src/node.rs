@@ -675,8 +675,7 @@ impl P2PNode {
 
                 for peer in self.heartbeat.get_alive_peers() {
                     if !self
-                        .transport
-                        .send(
+                        .stamp_and_send(
                             peer.clone(),
                             Message::ViewEvent {
                                 message: message.clone(),
