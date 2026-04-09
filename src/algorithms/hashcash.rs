@@ -81,3 +81,29 @@ fn canonical<M: Stamp + Serialize + Clone>(
     value.sort_all_objects();
     Ok(value.to_string())
 }
+
+fn mine_stamp<M: Stamp + Serialize + Clone>(
+    message: &M,
+    difficulty: Option<u8>,
+    max_nonce: Option<u64>,
+) -> Option<ProofOfWork> {
+    let canon = canonical(message).ok()?;
+    let max_nonce = max_nonce.unwrap_or(50_000_000);
+    let difficulty = difficulty.unwrap_or_else(|| message.difficulty());
+    let mut nonce: u64 = 0;
+    let target = "0".repeat(difficulty.into());
+    while nonce < max_nonce {
+        let attempt = format!("{canon}:{nonce}");
+        let hash = lower::encode_string(&Sha256::digest(attempt));
+        if hash.starts_with(&target) {
+            return Some(ProofOfWork {
+                nonce,
+                difficulty,
+                hash,
+            });
+        }
+        nonce += 1;
+    }
+
+    None
+}
