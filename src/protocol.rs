@@ -23,6 +23,7 @@ use jiff::tz::TimeZone;
 use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value, json};
 
+use crate::algorithms::hashcash::ProofOfWork;
 use crate::node::Id;
 
 #[derive(
@@ -192,6 +193,8 @@ pub struct Hello {
     timestamp: jiff::Timestamp,
     msg_id: String,
     queue_url: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pow: Option<ProofOfWork>,
 }
 
 impl Hello {
@@ -203,6 +206,7 @@ impl Hello {
                 .timestamp(),
             msg_id: uuid::Uuid::new_v4().to_string(),
             queue_url,
+            pow: None,
         }
     }
 
@@ -795,8 +799,9 @@ mod test {
             sender: Id::new("alice".to_owned()),
             timestamp: NINETEEN_EIGHTY_FOUR,
             msg_id: "a1b2c3d4".to_owned(),
-            queue_url:"https://sqs.us-east-1.amazonaws.com/194722398367/ds2032-node-alice-p2p".to_owned()}
-        };
+            queue_url:"https://sqs.us-east-1.amazonaws.com/194722398367/ds2032-node-alice-p2p".to_owned(),
+            pow:None
+        }};
 
         assert_eq!(constructed, deserialized);
     }
