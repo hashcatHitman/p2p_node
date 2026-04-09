@@ -921,6 +921,22 @@ impl Payment {
     pub fn msg_id(&self) -> &str {
         &self.msg_id
     }
+
+    pub fn content_id(&self) -> &str {
+        &self.content_id
+    }
+
+    pub const fn agreed_count(&self) -> u64 {
+        self.agreed_count
+    }
+
+    pub const fn amount(&self) -> f64 {
+        self.amount
+    }
+
+    pub fn audit_ref(&self) -> &str {
+        &self.audit_ref
+    }
 }
 
 impl Stamp for Payment {
