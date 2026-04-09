@@ -19,5 +19,6 @@ pub mod choking;
 pub mod content;
 pub mod election;
 pub mod gossip;
+pub mod hashcash;
 pub mod heartbeat;
 pub mod reputation;
