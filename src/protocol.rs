@@ -558,6 +558,8 @@ pub struct AuditResult {
     confidence: f64,
     #[serde(skip_serializing_if = "Option::is_none")]
     voters: Option<Vec<Id>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pow: Option<ProofOfWork>,
 }
 
 impl AuditResult {
@@ -578,6 +580,7 @@ impl AuditResult {
             agreed_count,
             confidence,
             voters,
+            pow: None,
         }
     }
 
@@ -1118,6 +1121,7 @@ mod test {
                     Id::new("don".to_owned()),
                     Id::new("edward".to_owned()),
                 ]),
+                pow: None,
             },
         };
 
@@ -1148,6 +1152,7 @@ mod test {
                 agreed_count: 150,
                 confidence: 0.92,
                 voters: None,
+                pow: None,
             },
         };
 
@@ -1177,6 +1182,7 @@ mod test {
                 agreed_count: 150,
                 confidence: 0.92,
                 voters: None,
+                pow: None,
             },
         };
 
