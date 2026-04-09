@@ -894,6 +894,53 @@ impl Stamp for Coordinator {
     }
 }
 
+#[derive(
+    Debug, Clone, PartialEq, PartialOrd, Default, Serialize, Deserialize,
+)]
+pub struct Payment {
+    sender: Id,
+    timestamp: jiff::Timestamp,
+    msg_id: String,
+    content_id: String,
+    agreed_count: u64,
+    amount: f64, // Using floats for money... sad!
+    audit_ref: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pow: Option<ProofOfWork>,
+}
+
+impl Payment {
+    pub const fn sender(&self) -> &Id {
+        &self.sender
+    }
+
+    pub const fn timestamp(&self) -> jiff::Timestamp {
+        self.timestamp
+    }
+
+    pub fn msg_id(&self) -> &str {
+        &self.msg_id
+    }
+}
+
+impl Stamp for Payment {
+    fn difficulty(&self) -> u8 {
+        Self::ELECTION
+    }
+
+    fn assign_pow(&mut self, pow: Option<ProofOfWork>) {
+        self.pow = pow;
+    }
+
+    fn remove_pow(&mut self) -> Option<ProofOfWork> {
+        self.pow.take()
+    }
+
+    fn pow(&self) -> Option<&ProofOfWork> {
+        self.pow.as_ref()
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, PartialOrd, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum Message {
@@ -941,6 +988,10 @@ pub enum Message {
         #[serde(flatten)]
         message: Coordinator,
     },
+    Payment {
+        #[serde(flatten)]
+        message: Payment,
+    },
 }
 
 impl Message {
@@ -957,6 +1008,7 @@ impl Message {
             Self::Election { ref message } => message.sender(),
             Self::ElectionOk { ref message } => message.sender(),
             Self::Coordinator { ref message } => message.sender(),
+            Self::Payment { ref message } => message.sender(),
         }
     }
 
@@ -973,6 +1025,7 @@ impl Message {
             Self::Election { ref message } => message.timestamp(),
             Self::ElectionOk { ref message } => message.timestamp(),
             Self::Coordinator { ref message } => message.timestamp(),
+            Self::Payment { ref message } => message.timestamp(),
         }
     }
 
@@ -989,6 +1042,7 @@ impl Message {
             Self::Election { ref message } => message.msg_id(),
             Self::ElectionOk { ref message } => message.msg_id(),
             Self::Coordinator { ref message } => message.msg_id(),
+            Self::Payment { ref message } => message.msg_id(),
         }
     }
 }
@@ -1007,6 +1061,7 @@ impl Stamp for Message {
             Self::Election { ref message } => message.difficulty(),
             Self::ElectionOk { ref message } => message.difficulty(),
             Self::Coordinator { ref message } => message.difficulty(),
+            Self::Payment { ref message } => message.difficulty(),
         }
     }
 
@@ -1023,6 +1078,7 @@ impl Stamp for Message {
             Self::Election { ref mut message } => message.assign_pow(pow),
             Self::ElectionOk { ref mut message } => message.assign_pow(pow),
             Self::Coordinator { ref mut message } => message.assign_pow(pow),
+            Self::Payment { ref mut message } => message.assign_pow(pow),
         }
     }
 
@@ -1039,6 +1095,7 @@ impl Stamp for Message {
             Self::Election { ref mut message } => message.remove_pow(),
             Self::ElectionOk { ref mut message } => message.remove_pow(),
             Self::Coordinator { ref mut message } => message.remove_pow(),
+            Self::Payment { ref mut message } => message.remove_pow(),
         }
     }
 
@@ -1055,6 +1112,7 @@ impl Stamp for Message {
             Self::Election { ref message } => message.pow(),
             Self::ElectionOk { ref message } => message.pow(),
             Self::Coordinator { ref message } => message.pow(),
+            Self::Payment { ref message } => message.pow(),
         }
     }
 }

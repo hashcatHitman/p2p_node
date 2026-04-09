@@ -353,6 +353,7 @@ impl P2PNode {
             Message::Election { ref message } => todo!("{:?}", message),
             Message::ElectionOk { ref message } => todo!("{:?}", message),
             Message::Coordinator { ref message } => todo!("{:?}", message),
+            Message::Payment { ref message } => todo!("{:?}", message),
         }
     }
 
