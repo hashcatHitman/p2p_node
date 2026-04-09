@@ -233,6 +233,7 @@ pub struct P2PNode {
     messages_received: u32,
     messages_sent: u32,
     rounds: u32,
+    current_payment_server: Option<Id>,
 }
 
 impl P2PNode {
@@ -284,6 +285,7 @@ impl P2PNode {
             messages_received: 0,
             messages_sent: 0,
             rounds: 0,
+            current_payment_server: None,
         };
         crate::log(
             &this.node_id,
