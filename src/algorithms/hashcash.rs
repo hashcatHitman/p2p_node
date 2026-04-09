@@ -44,3 +44,27 @@ pub struct ProofOfWork {
     // The actual type sha2 returns is not print/serde friendly, so...
     hash: String,
 }
+
+pub trait Stamp {
+    const LOW_FREQUENCY: u8 = 2;
+
+    const CONTENT: u8 = 3;
+
+    const ELECTION: u8 = 3;
+
+    const PAYMENT_TRIGGERING: u8 = 4;
+
+    fn difficulty(&self) -> u8;
+
+    /// Assign the given [`ProofOfWork`], if any, to the implementing type.
+    /// Passing [`None`] can be used to erase any existing [`ProofOfWork`].
+    // TODO: Maybe this shouldn't take an `Option`? Can always erase by
+    // ignoring the return of `remove_pow`...
+    fn assign_pow(&mut self, pow: Option<ProofOfWork>);
+
+    /// Take whatever [`ProofOfWork`] is owned by the implementing type and
+    /// replace it with [`None`].
+    fn remove_pow(&mut self) -> Option<ProofOfWork>;
+
+    fn pow(&self) -> Option<&ProofOfWork>;
+}
